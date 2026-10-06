@@ -1,0 +1,53 @@
+# =====================================================
+#  .gitignore - Proyecto STM32CubeIDE (STM32F446RE)
+# =====================================================
+
+# --- Workspace de Eclipse / STM32CubeIDE ---
+.metadata/
+RemoteSystemsTempFiles/
+
+# --- Carpetas de compilacion (se regeneran al compilar) ---
+**/Debug/
+**/Release/
+
+# --- Binarios y archivos intermedios de compilacion ---
+*.o
+*.d
+*.su
+*.cyclo
+*.elf
+*.bin
+*.hex
+*.srec
+*.map
+*.list
+*.obj
+*.out
+
+# --- Configuracion local de cada maquina (el IDE la regenera) ---
+# Configuracion de debug: tiene rutas absolutas de esta PC.
+# Borrar esta linea si se quiere compartir la config de debug.
+*.launch
+**/.settings/language.settings.xml
+**/.settings/com.st.stm32cube.ide.mcu.sfrview.prefs
+st-link_gdbserver_log.txt
+
+# --- Documentacion de los drivers de ST (no hace falta para compilar, ~120 MB) ---
+*.chm
+**/Drivers/**/Release_Notes.html
+**/Drivers/**/_htmresc/
+
+# --- Sistema operativo ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# --- Editores / herramientas ---
+.vscode/
+.claude/settings.local.json
+*.swp
+*~
+*.bak
+*.tmp
