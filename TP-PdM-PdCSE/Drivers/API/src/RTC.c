@@ -6,14 +6,19 @@
  */
 
 #include "general_def.h"
+#include "RTC_port.h"
+#include "ports.h"
+#include "RTC.h"
 
-typedef struct {
-	uint8_t	Hours;
-	uint8_t Minutes;
-} Clock_time;
+#define DS1307_ADDR ( 0x68 << 1 )
+#define MIN_HOUR	0
+#define MAX_HOUR	23
+#define MAX_MIN		59
+#define MIN_MIN		0
+
+static void RTC_Init( void );
 
 static I2C_HandleTypeDef hi2c1;
-
 
 void initRTC()
 {
@@ -52,4 +57,94 @@ void initRTC()
 	hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
 
 	HAL_I2C_Init(&hi2c1);
+	RTC_Init();
 }
+
+static void RTC_Init( void )
+{
+    uint8_t reg_sec = 0x00;     // CH = 0 (arranca oscilador), segundos = 0
+    uint8_t reg_ctrl = 0x10;    // SQWE = 1, Frecuencia = 1 Hz (registro 0x07)
+
+    // 1. Activar oscilador (Registro 0x00)
+    RTC_send_data(&hi2c1, DS1307_ADDR, 0x00, I2C_MEMADD_SIZE_8BIT, &reg_sec, 1, HAL_MAX_DELAY);
+
+    // 2. Habilitar onda cuadrada a 1 Hz en el pin SQW (Registro 0x07)
+    RTC_send_data(&hi2c1, DS1307_ADDR, 0x07, I2C_MEMADD_SIZE_8BIT, &reg_ctrl, 1, HAL_MAX_DELAY);
+}
+
+static uint8_t decToBcd( uint8_t val )
+{
+	return ( ( val / 10 ) << 4 ) | ( val % 10 );
+}
+
+static uint8_t bcdToDec( uint8_t val )
+{
+	return ( ( val >> 4 ) * 10 ) + ( val & 0x0f );
+}
+
+void initClock( Clock_time *clock )
+{
+	clock->Hours = MIN_HOUR;
+	clock->Minutes = MIN_MIN;
+}
+
+void addHour( Clock_time *clock )
+{
+	if ( clock->Hours < MAX_HOUR ) {
+		clock->Hours += 1;
+	}
+	else {
+		clock->Hours = MIN_HOUR;
+	}
+}
+
+void substractHour( Clock_time *clock )
+{
+	if ( clock->Hours > MIN_HOUR ) {
+			clock->Hours -= 1;
+	}
+	else {
+		clock->Hours = MAX_HOUR;
+	}
+}
+
+void addMin( Clock_time *clock )
+{
+	if ( clock->Hours < MAX_MIN ) {
+		clock->Hours += 1;
+	}
+	else {
+		clock->Hours = MIN_MIN;
+	}
+}
+
+void substractMin( Clock_time *clock )
+{
+	if ( clock->Hours > MIN_MIN ) {
+			clock->Hours -= 1;
+	}
+	else {
+		clock->Hours = MAX_MIN;
+	}
+}
+
+void RTC_SetTime( Clock_time clock)
+{
+	uint8_t data[3];
+	data[0] =  0x7F;
+	data[1] = decToBcd(clock.Minutes) & 0x7F;
+	data[2] = decToBcd(clock.Hours) & 0x3F;
+	RTC_send_data( &hi2c1, DS1307_ADDR, 0x00, I2C_MEMADD_SIZE_8BIT, data, 3, HAL_MAX_DELAY);
+}
+
+//Revisar ver de hacer checkeo
+void RTC_ReadTime( Clock_time *clock )
+{
+	uint8_t data[3];
+	RTC_read_data(&hi2c1, DS1307_ADDR, 0x01, I2C_MEMADD_SIZE_8BIT, data, 2, HAL_MAX_DELAY);
+
+	clock->Minutes = bcdToDec(data[0] & 0x7F);
+	clock->Hours = bcdToDec(data[1] & 0x3F);
+
+}
+
