@@ -10,6 +10,20 @@
 
 /* Buffer de Pantalla Completa: 128x64 píxeles (1024 bytes) */
 /* Dimensiones: 16 columnas x 24 px (3 páginas) - 48 bytes */
+
+static const uint8_t bm_num_0_data[48] = {
+    /* Pág 0 */ 0x00, 0x00, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    /* Pág 1 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    /* Pág 2 */ 0x00, 0x00, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0xFF, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00, 0x00
+};
+
+const OLED_Bitmap_t bm_num_0 = {
+    .width = 16,
+    .pages = 3,
+    .data  = bm_num_0_data
+};
+
+
 static const uint8_t bm_num_1_data[48] = {
     /* Pág 0 */ 0x00, 0x00, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     /* Pág 1 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -171,7 +185,96 @@ OLED_Bitmap_t get_bm_num_1()
 	return bm_num_1;
 }
 
+OLED_Bitmap_t get_bm_num_2()
+{
+	return bm_num_2;
+}
+
+OLED_Bitmap_t get_bm_num_3()
+{
+	return bm_num_3;
+}
+
+OLED_Bitmap_t get_bm_num_4()
+{
+	return bm_num_4;
+}
+
+OLED_Bitmap_t get_bm_num_5()
+{
+	return bm_num_5;
+}
+
+OLED_Bitmap_t get_bm_num_6()
+{
+	return bm_num_6;
+}
+
+OLED_Bitmap_t get_bm_num_7()
+{
+	return bm_num_7;
+}
+
+OLED_Bitmap_t get_bm_num_8()
+{
+	return bm_num_8;
+}
+
+OLED_Bitmap_t get_bm_num_9()
+{
+	return bm_num_9;
+}
+
+OLED_Bitmap_t get_bm_num_0()
+{
+	return bm_num_0;
+}
+
+OLED_Bitmap_t get_bm_num_doble_dot()
+{
+	return bm_num_doble_dot;
+}
+
 OLED_Bitmap_t get_bm_alrm2()
 {
 	return bm_alrm2;
+}
+
+OLED_Bitmap_t getNumberDraw( uint8_t number )
+{
+	switch(number)
+	{
+	case 1:
+		return get_bm_num_1();
+		break;
+	case 2:
+		return get_bm_num_2();
+		break;
+	case 3:
+		return get_bm_num_3();
+		break;
+	case 4:
+		return get_bm_num_4();
+		break;
+	case 5:
+		return get_bm_num_5();
+		break;
+	case 6:
+		return get_bm_num_6();
+		break;
+	case 7:
+		return get_bm_num_7();
+		break;
+	case 8:
+		return get_bm_num_8();
+		break;
+	case 9:
+		return get_bm_num_9();
+		break;
+	case 0:
+		return get_bm_num_0();
+		break;
+	}
+
+	return get_bm_num_0();
 }

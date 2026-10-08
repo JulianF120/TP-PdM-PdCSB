@@ -10,6 +10,17 @@
 #include "ports.h"
 #include "LCD_Draws.h"
 #include "LCD_port.h"
+#include "RTC.h"
+
+#define SSD1306_CMD_FADE_BLINK  0x23
+#define BLINK_INTERVAL 1
+
+static const uint8_t Hour_Dec = 8;
+static const uint8_t Hour_Unit = 24;
+static const uint8_t Doble_Dot = 40;
+static const uint8_t Min_Dec = 48;
+static const uint8_t Min_Unit = 64;
+static const uint8_t Alarm_Icon = 104;
 
 static void LCD_Init( void );
 
@@ -76,7 +87,7 @@ static void LCD_Write_Command(uint8_t cmd) {
     HAL_GPIO_WritePin(SPI_LCD_DC_PORT, SPI_LCD_DC_PIN, GPIO_PIN_RESET); // DC = 0 (Comando)
     HAL_GPIO_WritePin(SPI_LCD_CS_PORT, SPI_LCD_CS_PIN, GPIO_PIN_RESET); // CS = 0 (Activo)
 
-    LCD_send_data(&hspi1, &cmd, 1, HAL_MAX_DELAY);//TODO cambiar a funciond efinida en port
+    LCD_send_data(&hspi1, &cmd, 1, HAL_MAX_DELAY);
 
     HAL_GPIO_WritePin(SPI_LCD_CS_PORT, SPI_LCD_CS_PIN, GPIO_PIN_SET);   // CS = 1 (Inactivo)
 }
@@ -157,3 +168,40 @@ void LED_Draw( uint8_t start_col, uint8_t start_page, OLED_Bitmap_t bitmap ) {
     // Al enviar los 16 bytes, los primeros 8 pintan arriba y los otros 8 abajo automáticamente
     LCD_Write_Data((uint8_t*)bitmap.data, (uint16_t)bitmap.width * bitmap.pages);
 }
+
+void LED_DrawTime( Clock_time clcok, bool_t alarmOn )
+{
+	uint8_t decHour = clcok.Hours / 10;
+	uint8_t unitHour = clcok.Hours % 10;
+	uint8_t decMin = clcok.Minutes / 10;
+	uint8_t unitMin = clcok.Minutes % 10;
+
+	uint8_t start_page = 0;
+	LCD_Clear();
+	LED_Draw( Hour_Dec, start_page, getNumberDraw( decHour ) );
+	start_page += 3;
+	LED_Draw( Hour_Unit, start_page, getNumberDraw( unitHour ) );
+	start_page += 3;
+	LED_Draw( Doble_Dot, start_page, get_bm_num_doble_dot() );
+	start_page += 3;
+	LED_Draw( Min_Dec, start_page, getNumberDraw( decMin ) );
+	start_page += 3;
+	LED_Draw( Min_Unit, start_page, getNumberDraw( unitMin ) );
+	if ( alarmOn ) {
+		LED_Draw( Alarm_Icon, start_page, get_bm_alrm2() );
+	}
+
+}
+
+void LED_BlinkEnable()
+{
+	LCD_Write_Command( SSD1306_CMD_FADE_BLINK );
+	LCD_Write_Command(0x30 | (BLINK_INTERVAL & 0x0F));
+}
+
+void LED_BlinkDisable()
+{
+	LCD_Write_Command( SSD1306_CMD_FADE_BLINK );
+	LCD_Write_Command( 0x00 );
+}
+

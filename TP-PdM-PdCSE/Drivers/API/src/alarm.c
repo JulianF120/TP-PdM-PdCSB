@@ -10,6 +10,7 @@
 #include "Button_Manager.h"
 #include "RTC.h"
 #include "ports.h"
+#include "LCD.h"
 
 static void idelState();
 static void confClockH_State();
@@ -86,8 +87,10 @@ static void idelState()
 	}
 	if ( buttonIsPress( BTN_START ) && timePressed( BTN_START ) >= secondsDelay ) {
 		actualState = CONF_CLK_H;
+		LED_BlinkEnable();
 	}
 	else if ( buttonIsPress( BTN_UP ) && timePressed( BTN_UP ) >= secondsDelay ) {
+		LED_BlinkEnable();
 		actualState = CONF_ALARM_H;
 	}
 	else if ( buttonIsPress( BTN_RIGHT) && buttonIsPress( BTN_LEFT ) &&
@@ -107,82 +110,86 @@ static void idelState()
 
 static void confClockH_State()
 {
+	LED_DrawTime( clock, statusAlarm );
 	if ( buttonIsPress( BTN_LEFT ) || buttonIsPress( BTN_RIGHT ) ) {
 		actualState = CONF_CLK_M;
 	}
 	else if (buttonIsPress( BTN_START )) {
 		RTC_SetTime( clock );
+		LED_DrawTime( clock, statusAlarm );
+		LED_BlinkDisable();
 		actualState = IDLE;
 	}
 	else if ( buttonIsPress( BTN_UP ) ) {
 		addHour( &clock );
-		//Enviar update a la pantalla
 	}
 	else if ( buttonIsPress( BTN_DOWN ) ) {
 		substractHour( &clock );
-		//Enviar update a la pantalla
 	}
 }
 
 static void confClockM_State()
 {
+	LED_DrawTime( clock, statusAlarm );
 	if ( buttonIsPress( BTN_LEFT ) || buttonIsPress( BTN_RIGHT ) ) {
 		actualState = CONF_CLK_H;
 	}
 	else if (buttonIsPress( BTN_START )) {
 		RTC_SetTime( clock );
+		LED_DrawTime( clock, statusAlarm );
+		LED_BlinkDisable();
 		actualState = IDLE;
 	}
 	else if ( buttonIsPress( BTN_UP ) ) {
 		addMin( &clock );
-		//Enviar update a la pantalla
 	}
 	else if ( buttonIsPress( BTN_DOWN ) ) {
 		substractMin( &clock );
-		//Enviar update a la pantalla
 	}
 }
 
 static void confAlarmH_State()
 {
+	LED_DrawTime( alarm, statusAlarm );
 	if ( buttonIsPress( BTN_LEFT ) || buttonIsPress( BTN_RIGHT ) ) {
 		actualState = CONF_ALARM_M;
 	}
 	else if (buttonIsPress( BTN_START )) {
 		actualState = IDLE;
+		LED_DrawTime( clock, statusAlarm );
+		LED_BlinkDisable();
 	}
 	else if ( buttonIsPress( BTN_UP ) ) {
 		addHour( &alarm );
-		//Enviar update a la pantalla
 	}
 	else if ( buttonIsPress( BTN_DOWN ) ) {
 		substractHour( &alarm );
-		//Enviar update a la pantalla
 	}
 }
 
 static void confAlarmM_State()
 {
+	LED_DrawTime( alarm, statusAlarm );
 	if ( buttonIsPress( BTN_LEFT ) || buttonIsPress( BTN_RIGHT ) ) {
 		actualState = CONF_ALARM_H;
 	}
 	else if (buttonIsPress( BTN_START )) {
 		actualState = IDLE;
+		LED_DrawTime( clock, statusAlarm );
+		LED_BlinkDisable();
 	}
 	else if ( buttonIsPress( BTN_UP ) ) {
 		addMin( &alarm );
-		//Enviar update a la pantalla
 	}
 	else if ( buttonIsPress( BTN_DOWN ) ) {
 		substractMin( &alarm );
-		//Enviar update a la pantalla
 	}
 }
 
 static void updateState()
 {
 	RTC_ReadTime( &clock );
-	//actualizar pantalla
+	LED_DrawTime( clock, statusAlarm );
 	actualState = IDLE;
 }
 
