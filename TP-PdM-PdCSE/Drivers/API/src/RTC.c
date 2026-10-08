@@ -148,3 +148,7 @@ void RTC_ReadTime( Clock_time *clock )
 
 }
 
+bool_t sameTime( Clock_time actual, Clock_time expected)
+{
+	return actual.Hours == expected.Hours & actual.Minutes == expected.Minutes;
+}

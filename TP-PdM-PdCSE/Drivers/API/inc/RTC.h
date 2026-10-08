@@ -23,5 +23,6 @@ void addMin( Clock_time *clock );
 void substractMin( Clock_time *clock );
 void RTC_SetTime( Clock_time clock);
 void RTC_ReadTime( Clock_time *clock );
+bool_t sameTime( Clock_time actual, Clock_time expected);
 
 #endif /* API_INC_RTC_H_ */
