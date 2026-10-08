@@ -21,20 +21,22 @@ typedef enum{
 
 typedef struct{
 	debounceState_t currentState;
-	tick_t timePressed;
+	tick_t pressStart;
 	uint32_t pin;
 	GPIO_TypeDef *port;
+	delay_t bounceDealy;
+	bool_t wasPressed;
 }buttonDebounce;
 
 static buttonDebounce buttons[] =
 {
-		{.currentState = BUTTON_UP, .timePressed = 0, .port = BUTTON_START_PORT, .pin = BUTTON_START_PIN},
-		{.currentState = BUTTON_UP, .timePressed = 0, .port = BUTTON_UP_PORT, .pin = BUTTON_UP_PIN},
-		{.currentState = BUTTON_UP, .timePressed = 0, .port = BUTTON_DOWN_PORT, .pin = BUTTON_DOWN_PIN},
-		{.currentState = BUTTON_UP, .timePressed = 0, .port = BUTTON_LEFT_PORT, .pin = BUTTON_LEFT_PIN},
-		{.currentState = BUTTON_UP, .timePressed = 0, .port = BUTTON_RIGHT_PORT, .pin = BUTTON_RIGHT_PIN},
+		{.currentState = BUTTON_UP, .pressStart = 0, .port = BUTTON_START_PORT, .pin = BUTTON_START_PIN},
+		{.currentState = BUTTON_UP, .pressStart = 0, .port = BUTTON_UP_PORT, .pin = BUTTON_UP_PIN},
+		{.currentState = BUTTON_UP, .pressStart = 0, .port = BUTTON_DOWN_PORT, .pin = BUTTON_DOWN_PIN},
+		{.currentState = BUTTON_UP, .pressStart = 0, .port = BUTTON_LEFT_PORT, .pin = BUTTON_LEFT_PIN},
+		{.currentState = BUTTON_UP, .pressStart = 0, .port = BUTTON_RIGHT_PORT, .pin = BUTTON_RIGHT_PIN},
 };
-static delay_t bounceDealy;           /**< @brief Non-blocking delay used for debounce timing. */
+
 static uint8_t debounceTime = 40;     /**< @brief Debounce time in milliseconds. */
 
 void initButtons( void ){
@@ -76,9 +78,10 @@ void initButtons( void ){
  */
 void debounceFSM_init( void )
 {
-	delayInit(&bounceDealy, debounceTime);
 	for (uint8_t btnId = 0; btnId < BTN_COUNT; btnId++) {
 		buttons[btnId].currentState = BUTTON_UP;
+		delayInit( &buttons[btnId].bounceDealy, debounceTime );
+		buttons[btnId].wasPressed = false;
 	}
 }
 
@@ -103,22 +106,22 @@ void debounceFSM_update( void )
 			break;
 
 			case BUTTON_FALLING:
-				if (delayRead(&bounceDealy))
+				if (delayRead(&button->bounceDealy))
 				{
 					if (HAL_GPIO_ReadPin(button->port, button->pin) == BUTTON_PRESSED_LEVEL)
 					{
+						button->wasPressed = true;
 						button->currentState = BUTTON_DOWN;
+						button->pressStart = HAL_GetTick();
 					}
 					else
 					{
-						button->timePressed = HAL_GetTick();
 						button->currentState = BUTTON_UP;
 					}
 				}
 			break;
 
 			case BUTTON_DOWN:
-				button->timePressed += HAL_GetTick();
 				if (HAL_GPIO_ReadPin(button->port, button->pin) != BUTTON_PRESSED_LEVEL)
 				{
 					button->currentState = BUTTON_RAISING;
@@ -126,11 +129,11 @@ void debounceFSM_update( void )
 			break;
 
 			case BUTTON_RAISING:
-				if (delayRead(&bounceDealy))
+				if (delayRead(&button->bounceDealy))
 				{
 					if (HAL_GPIO_ReadPin(button->port, button->pin) != BUTTON_PRESSED_LEVEL)
 					{
-						button->timePressed = 0;
+						button->pressStart = 0;
 						button->currentState = BUTTON_UP;
 					}
 					else
@@ -148,7 +151,19 @@ bool_t buttonIsPress( ButtonId_t btnId )
 	return buttons[btnId].currentState == BUTTON_DOWN;
 }
 
-tick_t timePressed( ButtonId_t btnId )
+
+
+tick_t timePressed(ButtonId_t btnId)
 {
-	return buttons[btnId].timePressed;
+    return buttons[btnId].currentState == BUTTON_DOWN ? HAL_GetTick() - buttons[btnId].pressStart : 0;
+}
+
+bool_t readKey(ButtonId_t btnId)
+{
+	if (buttons[btnId].wasPressed)
+	{
+		buttons[btnId].wasPressed = false;
+		return true;
+	}
+	return buttons[btnId].wasPressed;
 }

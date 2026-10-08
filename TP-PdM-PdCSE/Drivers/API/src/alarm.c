@@ -81,19 +81,20 @@ void alarmFSM_update( )
 
 static void idelState()
 {
+	LED_DrawTime( clock, statusAlarm );
 	GPIO_PinState sqw_curr = HAL_GPIO_ReadPin( I2C_RTC_SQW_PORT, I2C_RTC_SQW_PIN );
 	if ( ringOff && sameTime( clock, alarm ) ) {
 		ringOff = !ringOff;
 	}
-	if ( buttonIsPress( BTN_START ) && timePressed( BTN_START ) >= secondsDelay ) {
+	if ( readKey( BTN_START ) && timePressed( BTN_START ) >= secondsDelay ) {
 		actualState = CONF_CLK_H;
 		LED_BlinkEnable();
 	}
-	else if ( buttonIsPress( BTN_UP ) && timePressed( BTN_UP ) >= secondsDelay ) {
+	else if ( readKey( BTN_UP ) && timePressed( BTN_UP ) >= secondsDelay ) {
 		LED_BlinkEnable();
 		actualState = CONF_ALARM_H;
 	}
-	else if ( buttonIsPress( BTN_RIGHT) && buttonIsPress( BTN_LEFT ) &&
+	else if ( readKey( BTN_RIGHT) && readKey( BTN_LEFT ) &&
 		timePressed( BTN_RIGHT ) >= secondsDelay && timePressed( BTN_LEFT ) >= secondsDelay ) {
 		statusAlarm = !statusAlarm;
 	}
@@ -111,19 +112,19 @@ static void idelState()
 static void confClockH_State()
 {
 	LED_DrawTime( clock, statusAlarm );
-	if ( buttonIsPress( BTN_LEFT ) || buttonIsPress( BTN_RIGHT ) ) {
+	if ( readKey( BTN_LEFT ) || readKey( BTN_RIGHT ) ) {
 		actualState = CONF_CLK_M;
 	}
-	else if (buttonIsPress( BTN_START )) {
+	else if (readKey( BTN_START )) {
 		RTC_SetTime( clock );
 		LED_DrawTime( clock, statusAlarm );
 		LED_BlinkDisable();
 		actualState = IDLE;
 	}
-	else if ( buttonIsPress( BTN_UP ) ) {
+	else if ( readKey( BTN_UP ) ) {
 		addHour( &clock );
 	}
-	else if ( buttonIsPress( BTN_DOWN ) ) {
+	else if ( readKey( BTN_DOWN ) ) {
 		substractHour( &clock );
 	}
 }
@@ -131,19 +132,19 @@ static void confClockH_State()
 static void confClockM_State()
 {
 	LED_DrawTime( clock, statusAlarm );
-	if ( buttonIsPress( BTN_LEFT ) || buttonIsPress( BTN_RIGHT ) ) {
+	if ( readKey( BTN_LEFT ) || readKey( BTN_RIGHT ) ) {
 		actualState = CONF_CLK_H;
 	}
-	else if (buttonIsPress( BTN_START )) {
+	else if (readKey( BTN_START )) {
 		RTC_SetTime( clock );
 		LED_DrawTime( clock, statusAlarm );
 		LED_BlinkDisable();
 		actualState = IDLE;
 	}
-	else if ( buttonIsPress( BTN_UP ) ) {
+	else if ( readKey( BTN_UP ) ) {
 		addMin( &clock );
 	}
-	else if ( buttonIsPress( BTN_DOWN ) ) {
+	else if ( readKey( BTN_DOWN ) ) {
 		substractMin( &clock );
 	}
 }
@@ -151,18 +152,18 @@ static void confClockM_State()
 static void confAlarmH_State()
 {
 	LED_DrawTime( alarm, statusAlarm );
-	if ( buttonIsPress( BTN_LEFT ) || buttonIsPress( BTN_RIGHT ) ) {
+	if ( readKey( BTN_LEFT ) || readKey( BTN_RIGHT ) ) {
 		actualState = CONF_ALARM_M;
 	}
-	else if (buttonIsPress( BTN_START )) {
+	else if (readKey( BTN_START )) {
 		actualState = IDLE;
 		LED_DrawTime( clock, statusAlarm );
 		LED_BlinkDisable();
 	}
-	else if ( buttonIsPress( BTN_UP ) ) {
+	else if ( readKey( BTN_UP ) ) {
 		addHour( &alarm );
 	}
-	else if ( buttonIsPress( BTN_DOWN ) ) {
+	else if ( readKey( BTN_DOWN ) ) {
 		substractHour( &alarm );
 	}
 }
@@ -170,18 +171,18 @@ static void confAlarmH_State()
 static void confAlarmM_State()
 {
 	LED_DrawTime( alarm, statusAlarm );
-	if ( buttonIsPress( BTN_LEFT ) || buttonIsPress( BTN_RIGHT ) ) {
+	if ( readKey( BTN_LEFT ) || readKey( BTN_RIGHT ) ) {
 		actualState = CONF_ALARM_H;
 	}
-	else if (buttonIsPress( BTN_START )) {
+	else if (readKey( BTN_START )) {
 		actualState = IDLE;
 		LED_DrawTime( clock, statusAlarm );
 		LED_BlinkDisable();
 	}
-	else if ( buttonIsPress( BTN_UP ) ) {
+	else if ( readKey( BTN_UP ) ) {
 		addMin( &alarm );
 	}
-	else if ( buttonIsPress( BTN_DOWN ) ) {
+	else if ( readKey( BTN_DOWN ) ) {
 		substractMin( &alarm );
 	}
 }
@@ -195,7 +196,7 @@ static void updateState()
 
 static void alarmRingState()
 {
-	if ( buttonIsPress( BTN_START ) ) {
+	if ( readKey( BTN_START ) ) {
 		actualState = IDLE;
 	}
 	//Ver como manjear el buzzer

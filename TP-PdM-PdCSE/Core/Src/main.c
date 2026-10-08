@@ -21,6 +21,7 @@
 #include "Button_Manager.h"
 #include "LCD.h"
 #include "LCD_Draws.h"
+#include "alarm.h"
 
 void SystemClock_Config(void);
 void Error_Handler(void);
@@ -32,21 +33,13 @@ int main(void)
     initButtons();
     LCDInit();
     debounceFSM_init();
-
+    initAlarmFSM();
+    LCD_Clear();
+    LED_BlinkEnable();
     while (1)
     {
     	debounceFSM_update();
-    	for (uint8_t btnId = 0; btnId < BTN_COUNT; btnId++) {
-			if (btnId == BTN_START && buttonIsPress(btnId))
-			{
-				LCD_Clear();
-			}
-			else if(buttonIsPress(btnId))
-			{
-				LED_Draw(btnId, btnId, get_bm_alrm2());
-			}
-		}
-
+    	alarmFSM_update();
     }
 }
 

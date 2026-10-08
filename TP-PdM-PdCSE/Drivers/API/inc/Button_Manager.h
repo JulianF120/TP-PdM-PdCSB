@@ -24,5 +24,6 @@ void debounceFSM_init( void );
 void debounceFSM_update( void );
 bool_t buttonIsPress( ButtonId_t btnId );
 tick_t timePressed( ButtonId_t btnId );
+bool_t readKey(ButtonId_t btnId);
 
 #endif /* API_INC_BUTTON_MANAGER_H_ */

@@ -8,6 +8,7 @@
 #ifndef API_INC_ALARM_H_
 #define API_INC_ALARM_H_
 
-
+void initAlarmFSM();
+void alarmFSM_update();
 
 #endif /* API_INC_ALARM_H_ */

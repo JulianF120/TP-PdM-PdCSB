@@ -176,19 +176,13 @@ void LED_DrawTime( Clock_time clcok, bool_t alarmOn )
 	uint8_t decMin = clcok.Minutes / 10;
 	uint8_t unitMin = clcok.Minutes % 10;
 
-	uint8_t start_page = 0;
-	LCD_Clear();
-	LED_Draw( Hour_Dec, start_page, getNumberDraw( decHour ) );
-	start_page += 3;
-	LED_Draw( Hour_Unit, start_page, getNumberDraw( unitHour ) );
-	start_page += 3;
-	LED_Draw( Doble_Dot, start_page, get_bm_num_doble_dot() );
-	start_page += 3;
-	LED_Draw( Min_Dec, start_page, getNumberDraw( decMin ) );
-	start_page += 3;
-	LED_Draw( Min_Unit, start_page, getNumberDraw( unitMin ) );
+	LED_Draw( Hour_Dec, 2, getNumberDraw( decHour ) );
+	LED_Draw( Hour_Unit, 2, getNumberDraw( unitHour ) );
+	LED_Draw( Doble_Dot, 2, get_bm_num_doble_dot() );
+	LED_Draw( Min_Dec, 2, getNumberDraw( decMin ) );
+	LED_Draw( Min_Unit, 2, getNumberDraw( unitMin ) );
 	if ( alarmOn ) {
-		LED_Draw( Alarm_Icon, start_page, get_bm_alrm2() );
+		LED_Draw( Alarm_Icon, 2, get_bm_alrm2() );
 	}
 
 }
