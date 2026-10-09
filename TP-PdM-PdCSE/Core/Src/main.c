@@ -31,11 +31,10 @@ int main(void)
     HAL_Init();
     SystemClock_Config();
     initButtons();
+    initRTC();
     LCDInit();
     debounceFSM_init();
     initAlarmFSM();
-    LCD_Clear();
-    LED_BlinkEnable();
     while (1)
     {
     	debounceFSM_update();

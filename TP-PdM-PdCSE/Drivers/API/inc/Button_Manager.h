@@ -22,8 +22,9 @@ typedef enum{
 void initButtons( void );
 void debounceFSM_init( void );
 void debounceFSM_update( void );
-bool_t buttonIsPress( ButtonId_t btnId );
-tick_t timePressed( ButtonId_t btnId );
-bool_t readKey(ButtonId_t btnId);
+bool_t longPress( ButtonId_t btnId );
+bool_t shortPress( ButtonId_t btnId );
+void clearKeys( void );
+bool_t buttonIsHeld( ButtonId_t btnId );
 
 #endif /* API_INC_BUTTON_MANAGER_H_ */

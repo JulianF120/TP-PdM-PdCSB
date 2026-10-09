@@ -110,21 +110,21 @@ void substractHour( Clock_time *clock )
 
 void addMin( Clock_time *clock )
 {
-	if ( clock->Hours < MAX_MIN ) {
-		clock->Hours += 1;
+	if ( clock->Minutes < MAX_MIN ) {
+		clock->Minutes += 1;
 	}
 	else {
-		clock->Hours = MIN_MIN;
+		clock->Minutes = MIN_MIN;
 	}
 }
 
 void substractMin( Clock_time *clock )
 {
-	if ( clock->Hours > MIN_MIN ) {
-			clock->Hours -= 1;
+	if ( clock->Minutes > MIN_MIN ) {
+			clock->Minutes -= 1;
 	}
 	else {
-		clock->Hours = MAX_MIN;
+		clock->Minutes = MAX_MIN;
 	}
 }
 

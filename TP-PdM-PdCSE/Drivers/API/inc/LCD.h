@@ -11,10 +11,10 @@
 #include "LCD_Draws.h"
 #include "RTC.h"
 
+typedef enum { BLINK_NONE, BLINK_HOURS, BLINK_MINUTES } BlinkField_t;
+
 void LCDInit( void );
 void LCD_Clear( void );
 void LED_Draw( uint8_t start_col, uint8_t start_page, OLED_Bitmap_t bitmap );
-void LED_DrawTime( Clock_time clcok, bool_t alarmOn );
-void LED_BlinkEnable();
-void LED_BlinkDisable();
+void LED_DrawTime( Clock_time clk, bool_t alarmOn, BlinkField_t hidden );
 #endif /* API_INC_LCD_H_ */

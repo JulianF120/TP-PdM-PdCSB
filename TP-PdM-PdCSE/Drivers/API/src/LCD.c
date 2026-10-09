@@ -11,8 +11,8 @@
 #include "LCD_Draws.h"
 #include "LCD_port.h"
 #include "RTC.h"
+#include "LCD.h"
 
-#define SSD1306_CMD_FADE_BLINK  0x23
 #define BLINK_INTERVAL 1
 
 static const uint8_t Hour_Dec = 8;
@@ -25,6 +25,7 @@ static const uint8_t Alarm_Icon = 104;
 static void LCD_Init( void );
 
 static SPI_HandleTypeDef hspi1;
+
 
 void LCDInit( void )
 {
@@ -169,33 +170,48 @@ void LED_Draw( uint8_t start_col, uint8_t start_page, OLED_Bitmap_t bitmap ) {
     LCD_Write_Data((uint8_t*)bitmap.data, (uint16_t)bitmap.width * bitmap.pages);
 }
 
-void LED_DrawTime( Clock_time clcok, bool_t alarmOn )
+static void LED_ClearArea( uint8_t start_col, uint8_t start_page, uint8_t width, uint8_t pages )
 {
-	uint8_t decHour = clcok.Hours / 10;
-	uint8_t unitHour = clcok.Hours % 10;
-	uint8_t decMin = clcok.Minutes / 10;
-	uint8_t unitMin = clcok.Minutes % 10;
+	uint8_t zero = 0x00;
+	LCD_Write_Command(0x21);
+	LCD_Write_Command(start_col);
+	LCD_Write_Command(start_col + width - 1);
+	LCD_Write_Command(0x22);
+	LCD_Write_Command(start_page);
+	LCD_Write_Command(start_page + pages - 1);
+	for (uint16_t i = 0; i < (uint16_t)width * pages; i++) {
+		LCD_Write_Data(&zero, 1);
+	}
+}
 
-	LED_Draw( Hour_Dec, 2, getNumberDraw( decHour ) );
-	LED_Draw( Hour_Unit, 2, getNumberDraw( unitHour ) );
-	LED_Draw( Doble_Dot, 2, get_bm_num_doble_dot() );
-	LED_Draw( Min_Dec, 2, getNumberDraw( decMin ) );
-	LED_Draw( Min_Unit, 2, getNumberDraw( unitMin ) );
-	if ( alarmOn ) {
-		LED_Draw( Alarm_Icon, 2, get_bm_alrm2() );
+void LED_DrawTime( Clock_time clk, bool_t alarmOn, BlinkField_t hidden )
+{
+	OLED_Bitmap_t num = getNumberDraw( 0 );
+
+	if ( hidden == BLINK_HOURS ) {
+		LED_ClearArea( Hour_Dec, 2, num.width, num.pages );
+		LED_ClearArea( Hour_Unit, 2, num.width, num.pages );
+	} else {
+		LED_Draw( Hour_Dec, 2, getNumberDraw( clk.Hours / 10 ) );
+		LED_Draw( Hour_Unit, 2, getNumberDraw( clk.Hours % 10 ) );
 	}
 
+	LED_Draw( Doble_Dot, 2, get_bm_num_doble_dot() );
+
+	if ( hidden == BLINK_MINUTES ) {
+		LED_ClearArea( Min_Dec, 2, num.width, num.pages );
+		LED_ClearArea( Min_Unit, 2, num.width, num.pages );
+	} else {
+		LED_Draw( Min_Dec, 2, getNumberDraw( clk.Minutes / 10 ) );
+		LED_Draw( Min_Unit, 2, getNumberDraw( clk.Minutes % 10 ) );
+	}
+
+	OLED_Bitmap_t icon = get_bm_alrm2();
+	if ( alarmOn ) {
+		LED_Draw( Alarm_Icon, 2, icon );
+	} else {
+		LED_ClearArea( Alarm_Icon, 2, icon.width, icon.pages );
+	}
 }
 
-void LED_BlinkEnable()
-{
-	LCD_Write_Command( SSD1306_CMD_FADE_BLINK );
-	LCD_Write_Command(0x30 | (BLINK_INTERVAL & 0x0F));
-}
-
-void LED_BlinkDisable()
-{
-	LCD_Write_Command( SSD1306_CMD_FADE_BLINK );
-	LCD_Write_Command( 0x00 );
-}
 
