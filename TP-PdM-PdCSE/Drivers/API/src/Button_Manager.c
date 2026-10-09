@@ -50,6 +50,7 @@ void initButtons( void ){
 
 	/* GPIO Ports Clock Enable */
 	__HAL_RCC_GPIOB_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
 
 	GPIO_InitStruct.Pin = BUTTON_START_PIN;
 	GPIO_InitStruct.Mode = BUTTON_START_MODE;

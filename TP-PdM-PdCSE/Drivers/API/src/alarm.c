@@ -98,7 +98,7 @@ void alarmFSM_update( )
 static void idelState()
 {
 	GPIO_PinState sqw_curr = HAL_GPIO_ReadPin( I2C_RTC_SQW_PORT, I2C_RTC_SQW_PIN );
-	if ( ringOff && sameTime( clock, alarm ) ) {
+	if ( ringOff && !sameTime( clock, alarm ) ) {
 		ringOff = !ringOff;
 	}
 	if ( longPress( BTN_START ) ) {
@@ -220,6 +220,7 @@ static void alarmRingState()
 	if ( shortPress( BTN_START ) ) {
 		changeState( IDLE );
 		HAL_GPIO_WritePin(BUZZER_PORT, BUZZER_PIN, 0);
+		ringOff = true;
 	}
 	BuzzerManager();
 }
