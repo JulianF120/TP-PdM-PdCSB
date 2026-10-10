@@ -2,7 +2,7 @@
  * alarm.c
  *
  *  Created on: 5 oct. 2026
- *      Author: julia
+ *      Author: Julian Ferreira
  */
 
 
@@ -10,19 +10,19 @@
 #include "Button_Manager.h"
 #include "RTC.h"
 #include "ports.h"
-#include "LCD.h"
+#include "OLED.h"
 
 #define BLINK_PERIOD_MS 500
 #define ALARM_RING_PERIOD_MS 200
 
-static void idelState();
-static void confClockH_State();
-static void confClockM_State();
-static void confAlarmH_State();
-static void confAlarmM_State();
-static void updateState();
-static void alarmRingState();
-static void BuzzerManager();
+static void idleState( void );
+static void confClockH_State( void );
+static void confClockM_State( void );
+static void confAlarmH_State( void );
+static void confAlarmM_State( void );
+static void updateState( void );
+static void alarmRingState( void );
+static void BuzzerManager( void );
 
 typedef enum{
 	IDLE,
@@ -38,11 +38,11 @@ static void changeState( alarmStates next );
 static void blinkRestart( void );
 static void drawConf( Clock_time t, BlinkField_t field );
 
-static alarmStates actualState;
-static bool_t statusAlarm;
+static alarmStates currentState;
+static bool_t alarmEnabled;
 static Clock_time clock;
 static Clock_time alarm;
-static GPIO_PinState sqw_prev;
+static GPIO_PinState sqwPrev;
 static bool_t ringOff;
 static delay_t blinkDelay;
 static bool_t blinkVisible;
@@ -50,11 +50,11 @@ static bool_t redraw;
 static bool_t comboHandled;
 static delay_t ringDelay;
 
-void initAlarmFSM()
+void alarmFSM_init( void )
 {
-	statusAlarm = false;
-	actualState = IDLE;
-	sqw_prev = GPIO_PIN_RESET;
+	alarmEnabled = false;
+	currentState = IDLE;
+	sqwPrev = GPIO_PIN_RESET;
 	ringOff = false;
 	initClock( &clock );
 	initClock( &alarm );
@@ -66,11 +66,11 @@ void initAlarmFSM()
 	updateState();
 }
 
-void alarmFSM_update( )
+void alarmFSM_update( void )
 {
-	switch(actualState){
+	switch(currentState){
 	case IDLE:
-		idelState();
+		idleState();
 		break;
 	case CONF_CLK_H:
 		confClockH_State();
@@ -96,11 +96,11 @@ void alarmFSM_update( )
 	}
 }
 
-static void idelState()
+static void idleState( void )
 {
-	GPIO_PinState sqw_curr = HAL_GPIO_ReadPin( I2C_RTC_SQW_PORT, I2C_RTC_SQW_PIN );
+	GPIO_PinState sqwCurr = HAL_GPIO_ReadPin( RTC_SQW_PORT, RTC_SQW_PIN );
 	if ( ringOff && !sameTime( clock, alarm ) ) {
-		ringOff = !ringOff;
+		ringOff = false;
 	}
 	if ( longPress( BTN_START ) ) {
 		changeState( CONF_CLK_H );
@@ -109,25 +109,25 @@ static void idelState()
 		changeState( CONF_ALARM_H );
 	}
 	else if ( buttonIsHeld( BTN_RIGHT ) && buttonIsHeld( BTN_LEFT ) && !comboHandled ) {
-		statusAlarm = !statusAlarm;
-		LED_DrawTime( clock, statusAlarm, BLINK_NONE );
+		alarmEnabled = !alarmEnabled;
+		OLED_DrawTime( clock, alarmEnabled, BLINK_NONE );
 		comboHandled = true;
 	}
-	else if ( statusAlarm && sameTime(clock, alarm) && !ringOff )
+	else if ( alarmEnabled && sameTime(clock, alarm) && !ringOff )
 	{
 		changeState( ALARM_RING );
 	}
-	else if (sqw_prev == GPIO_PIN_RESET && sqw_curr == GPIO_PIN_SET)
+	else if (sqwPrev == GPIO_PIN_RESET && sqwCurr == GPIO_PIN_SET)
 	{
 		changeState( UPDATE );
 	}
 	if ( !buttonIsHeld( BTN_RIGHT ) || !buttonIsHeld( BTN_LEFT ) ) {
-			comboHandled = false;
+		comboHandled = false;
 	}
-	sqw_prev = sqw_curr;
+	sqwPrev = sqwCurr;
 }
 
-static void confClockH_State()
+static void confClockH_State( void )
 {
 	drawConf( clock, BLINK_HOURS );
 	if ( shortPress( BTN_LEFT ) || shortPress( BTN_RIGHT ) ) {
@@ -135,7 +135,7 @@ static void confClockH_State()
 	}
 	else if (shortPress( BTN_START )) {
 		RTC_SetTime( clock );
-		LED_DrawTime( clock, statusAlarm, BLINK_NONE );
+		OLED_DrawTime( clock, alarmEnabled, BLINK_NONE );
 		changeState( IDLE );
 	}
 	else if ( shortPress( BTN_UP ) ) {
@@ -143,12 +143,12 @@ static void confClockH_State()
 		blinkRestart();
 	}
 	else if ( shortPress( BTN_DOWN ) ) {
-		substractHour( &clock );
+		subtractHour( &clock );
 		blinkRestart();
 	}
 }
 
-static void confClockM_State()
+static void confClockM_State( void )
 {
 	drawConf( clock, BLINK_MINUTES );
 	if ( shortPress( BTN_LEFT ) || shortPress( BTN_RIGHT ) ) {
@@ -156,7 +156,7 @@ static void confClockM_State()
 	}
 	else if ( shortPress( BTN_START )) {
 		RTC_SetTime( clock );
-		LED_DrawTime( clock, statusAlarm, BLINK_NONE );
+		OLED_DrawTime( clock, alarmEnabled, BLINK_NONE );
 		changeState( IDLE );
 	}
 	else if ( shortPress( BTN_UP ) ) {
@@ -164,12 +164,12 @@ static void confClockM_State()
 		blinkRestart();
 	}
 	else if ( shortPress( BTN_DOWN ) ) {
-		substractMin( &clock );
+		subtractMin( &clock );
 		blinkRestart();
 	}
 }
 
-static void confAlarmH_State()
+static void confAlarmH_State( void )
 {
 	drawConf( alarm, BLINK_HOURS );
 	if ( shortPress( BTN_LEFT ) || shortPress( BTN_RIGHT ) ) {
@@ -177,19 +177,19 @@ static void confAlarmH_State()
 	}
 	else if (shortPress( BTN_START )) {
 		changeState( IDLE );
-		LED_DrawTime( clock, statusAlarm, BLINK_NONE );
+		OLED_DrawTime( clock, alarmEnabled, BLINK_NONE );
 	}
 	else if ( shortPress( BTN_UP ) ) {
 		addHour( &alarm );
 		blinkRestart();
 	}
 	else if ( shortPress( BTN_DOWN ) ) {
-		substractHour( &alarm );
+		subtractHour( &alarm );
 		blinkRestart();
 	}
 }
 
-static void confAlarmM_State()
+static void confAlarmM_State( void )
 {
 	drawConf( alarm, BLINK_MINUTES );
 	if ( shortPress( BTN_LEFT ) || shortPress( BTN_RIGHT ) ) {
@@ -197,26 +197,26 @@ static void confAlarmM_State()
 	}
 	else if ( shortPress( BTN_START )) {
 		changeState( IDLE );
-		LED_DrawTime( clock, statusAlarm, BLINK_NONE );
+		OLED_DrawTime( clock, alarmEnabled, BLINK_NONE );
 	}
 	else if ( shortPress( BTN_UP ) ) {
 		addMin( &alarm );
 		blinkRestart();
 	}
 	else if ( shortPress( BTN_DOWN ) ) {
-		substractMin( &alarm );
+		subtractMin( &alarm );
 		blinkRestart();
 	}
 }
 
-static void updateState()
+static void updateState( void )
 {
 	RTC_ReadTime( &clock );
-	LED_DrawTime( clock, statusAlarm, BLINK_NONE );
-	actualState = IDLE;
+	OLED_DrawTime( clock, alarmEnabled, BLINK_NONE );
+	currentState = IDLE;
 }
 
-static void alarmRingState()
+static void alarmRingState( void )
 {
 	if ( shortPress( BTN_START ) ) {
 		changeState( IDLE );
@@ -230,7 +230,7 @@ static void changeState( alarmStates next )
 {
 	clearKeys();
 	blinkRestart();
-	actualState = next;
+	currentState = next;
 }
 
 static void blinkRestart( void )   // al entrar a un CONF_* o al cambiar el valor
@@ -247,12 +247,12 @@ static void drawConf( Clock_time t, BlinkField_t field )
 		redraw = true;
 	}
 	if ( redraw ) {
-		LED_DrawTime( t, statusAlarm, blinkVisible ? BLINK_NONE : field );
+		OLED_DrawTime( t, alarmEnabled, blinkVisible ? BLINK_NONE : field );
 		redraw = false;
 	}
 }
 
-static void BuzzerManager()
+static void BuzzerManager( void )
 {
 	if ( delayRead( &ringDelay ) ) {
 		HAL_GPIO_TogglePin( BUZZER_PORT, BUZZER_PIN );

@@ -14,8 +14,7 @@
  * @brief Initializes a delay structure with the given duration.
  *
  * Sets the running flag to false and stores the specified duration.
- * If the pointer is NULL or the duration is zero, the function returns
- * without modifying anything.
+ * If the pointer is NULL or the duration is zero, Error_Handler() is called.
  *
  * @param[in,out] delay    Pointer to the delay structure to initialize.
  * @param[in]     duration Delay duration in milliseconds. Must be > 0.
@@ -44,7 +43,7 @@ void delayInit( delay_t * delay, tick_t duration ){
 bool_t delayRead( delay_t * delay ){
 
 	if (delay == NULL) {
-	        return false;
+		return false;
 	}
 
 	tick_t time = HAL_GetTick();
@@ -74,7 +73,7 @@ bool_t delayRead( delay_t * delay ){
 void delayWrite( delay_t * delay, tick_t duration ){
 
 	if (delay == NULL || duration == 0) {
-	        return;
+		return;
 	}
 
 	delay->duration = duration;

@@ -2,7 +2,7 @@
  * RTC_port.c
  *
  *  Created on: 6 oct. 2026
- *      Author: julia
+ *      Author: Julian Ferreira
  */
 
 

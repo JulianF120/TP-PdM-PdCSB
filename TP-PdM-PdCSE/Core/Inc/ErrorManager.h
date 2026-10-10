@@ -2,7 +2,7 @@
  * ErrorManager.h
  *
  *  Created on: 9 oct. 2026
- *      Author: julia
+ *      Author: Julian Ferreira
  */
 
 #ifndef INC_ERRORMANAGER_H_

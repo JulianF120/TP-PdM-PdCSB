@@ -2,7 +2,7 @@
  * general_def.h
  *
  *  Created on: 3 oct. 2026
- *      Author: julia
+ *      Author: Julian Ferreira
  */
 
 #ifndef INC_GENERAL_DEF_H_

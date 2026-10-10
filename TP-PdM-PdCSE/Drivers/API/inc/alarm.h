@@ -2,13 +2,13 @@
  * alarm.h
  *
  *  Created on: 5 oct. 2026
- *      Author: julia
+ *      Author: Julian Ferreira
  */
 
 #ifndef API_INC_ALARM_H_
 #define API_INC_ALARM_H_
 
-void initAlarmFSM();
-void alarmFSM_update();
+void alarmFSM_init( void );
+void alarmFSM_update( void );
 
 #endif /* API_INC_ALARM_H_ */

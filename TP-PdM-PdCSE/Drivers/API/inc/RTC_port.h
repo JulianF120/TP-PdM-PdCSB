@@ -2,7 +2,7 @@
  * RTC_port.h
  *
  *  Created on: 6 oct. 2026
- *      Author: julia
+ *      Author: Julian Ferreira
  */
 
 #ifndef API_INC_RTC_PORT_H_

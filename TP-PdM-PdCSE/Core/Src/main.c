@@ -19,8 +19,8 @@
 #include "general_def.h"
 #include "main.h"
 #include "Button_Manager.h"
-#include "LCD.h"
-#include "LCD_Draws.h"
+#include "OLED.h"
+#include "OLED_Draws.h"
 #include "alarm.h"
 #include "ErrorManager.h"
 
@@ -32,11 +32,11 @@ int main(void)
     	Error_Handler();
     }
     SystemClock_Config();
-    initButtons();
-    initRTC();
-    LCDInit();
+    Buttons_Init();
+    RTC_Init();
+    OLED_Init();
     debounceFSM_init();
-    initAlarmFSM();
+    alarmFSM_init();
     while (1)
     {
     	debounceFSM_update();

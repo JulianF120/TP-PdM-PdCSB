@@ -2,7 +2,7 @@
  * Button_Manager.h
  *
  *  Created on: 3 oct. 2026
- *      Author: julia
+ *      Author: Julian Ferreira
  */
 
 #ifndef API_INC_BUTTON_MANAGER_H_
@@ -19,7 +19,7 @@ typedef enum{
 	BTN_COUNT
 }ButtonId_t;
 
-void initButtons( void );
+void Buttons_Init( void );
 void debounceFSM_init( void );
 void debounceFSM_update( void );
 bool_t longPress( ButtonId_t btnId );

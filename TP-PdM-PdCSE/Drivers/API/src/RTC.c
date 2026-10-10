@@ -2,7 +2,7 @@
  * RTC.c
  *
  *  Created on: 6 oct. 2026
- *      Author: julia
+ *      Author: Julian Ferreira
  */
 
 #include "general_def.h"
@@ -40,11 +40,11 @@ enum { TIME_IDX_SEC, TIME_IDX_MIN, TIME_IDX_HOUR };	// orden de los registros al
 enum { READ_IDX_MIN, READ_IDX_HOUR };				// orden al leer desde DS1307_REG_MINUTES
 
 
-static void RTC_Init( void );
+static void RTC_ConfigureDevice( void );
 
 static I2C_HandleTypeDef hi2c1;
 
-void initRTC()
+void RTC_Init( void )
 {
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
@@ -52,23 +52,23 @@ void initRTC()
 
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-	GPIO_InitStruct.Pin = I2C_RTC_SQW_PIN;
-	GPIO_InitStruct.Mode = I2C_RTC_SQW_MODE;
-	GPIO_InitStruct.Pull = I2C_RTC_SQW_PULL;
-	HAL_GPIO_Init(I2C_RTC_SQW_PORT, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = RTC_SQW_PIN;
+	GPIO_InitStruct.Mode = RTC_SQW_MODE;
+	GPIO_InitStruct.Pull = RTC_SQW_PULL;
+	HAL_GPIO_Init(RTC_SQW_PORT, &GPIO_InitStruct);
 
 	GPIO_InitStruct.Pin = I2C_RTC_SDA_PIN;
 	GPIO_InitStruct.Mode = I2C_RTC_SDA_MODE;
 	GPIO_InitStruct.Pull = I2C_RTC_SDA_PULL;
-	GPIO_InitStruct.Speed = I2C_RTC_SCL_SPEED;
-	GPIO_InitStruct.Alternate = I2C_RTC_SCL_AF;
+	GPIO_InitStruct.Speed = I2C_RTC_SDA_SPEED;
+	GPIO_InitStruct.Alternate = I2C_RTC_SDA_AF;
 	HAL_GPIO_Init(I2C_RTC_SDA_PORT, &GPIO_InitStruct);
 
 	GPIO_InitStruct.Pin = I2C_RTC_SCL_PIN;
 	GPIO_InitStruct.Mode = I2C_RTC_SCL_MODE;
 	GPIO_InitStruct.Pull = I2C_RTC_SCL_PULL;
-	GPIO_InitStruct.Speed = I2C_RTC_SDA_SPEED;
-	GPIO_InitStruct.Alternate = I2C_RTC_SDA_AF;
+	GPIO_InitStruct.Speed = I2C_RTC_SCL_SPEED;
+	GPIO_InitStruct.Alternate = I2C_RTC_SCL_AF;
 	HAL_GPIO_Init(I2C_RTC_SCL_PORT, &GPIO_InitStruct);
 
 	hi2c1.Instance = I2C1;
@@ -84,19 +84,19 @@ void initRTC()
 		Error_Handler();
 	}
 
-	RTC_Init();
+	RTC_ConfigureDevice();
 }
 
-static void RTC_Init( void )
+static void RTC_ConfigureDevice( void )
 {
-    uint8_t reg_sec = DS1307_SECONDS_RESET;
-    uint8_t reg_ctrl = DS1307_CTRL_SQW_1HZ;
+	uint8_t reg_sec = DS1307_SECONDS_RESET;
+	uint8_t reg_ctrl = DS1307_CTRL_SQW_1HZ;
 
-    // 1. Activar oscilador
-    RTC_send_data(&hi2c1, DS1307_ADDR, DS1307_REG_SECONDS, I2C_MEMADD_SIZE_8BIT, &reg_sec, sizeof(reg_sec), RTC_I2C_TIMEOUT_MS);
+	// 1. Activar oscilador
+	RTC_send_data(&hi2c1, DS1307_ADDR, DS1307_REG_SECONDS, I2C_MEMADD_SIZE_8BIT, &reg_sec, sizeof(reg_sec), RTC_I2C_TIMEOUT_MS);
 
-    // 2. Habilitar onda cuadrada a 1 Hz en el pin SQW
-    RTC_send_data(&hi2c1, DS1307_ADDR, DS1307_REG_CONTROL, I2C_MEMADD_SIZE_8BIT, &reg_ctrl, sizeof(reg_ctrl), RTC_I2C_TIMEOUT_MS);
+	// 2. Habilitar onda cuadrada a 1 Hz en el pin SQW
+	RTC_send_data(&hi2c1, DS1307_ADDR, DS1307_REG_CONTROL, I2C_MEMADD_SIZE_8BIT, &reg_ctrl, sizeof(reg_ctrl), RTC_I2C_TIMEOUT_MS);
 }
 
 static uint8_t decToBcd( uint8_t val )
@@ -133,14 +133,14 @@ void addHour( Clock_time *clock )
 	}
 }
 
-void substractHour( Clock_time *clock )
+void subtractHour( Clock_time *clock )
 {
 	if ( clock == NULL ) {
 		Error_Handler();
 	}
 
 	if ( clock->Hours > MIN_HOUR ) {
-			clock->Hours -= 1;
+		clock->Hours -= 1;
 	}
 	else {
 		clock->Hours = MAX_HOUR;
@@ -161,14 +161,14 @@ void addMin( Clock_time *clock )
 	}
 }
 
-void substractMin( Clock_time *clock )
+void subtractMin( Clock_time *clock )
 {
 	if ( clock == NULL ) {
 		Error_Handler();
 	}
 
 	if ( clock->Minutes > MIN_MIN ) {
-			clock->Minutes -= 1;
+		clock->Minutes -= 1;
 	}
 	else {
 		clock->Minutes = MAX_MIN;
@@ -183,7 +183,7 @@ void RTC_SetTime( Clock_time clock)
 	}
 
 	if (clock.Minutes > MAX_MIN) {
-			return;
+		return;
 	}
 
 	uint8_t data[DS1307_TIME_WRITE_LEN];
@@ -204,7 +204,7 @@ void RTC_ReadTime( Clock_time *clock )
 	}
 
 	if (clock->Minutes > MAX_MIN) {
-			return;
+		return;
 	}
 
 	uint8_t data[DS1307_TIME_READ_LEN];
@@ -217,5 +217,5 @@ void RTC_ReadTime( Clock_time *clock )
 
 bool_t sameTime( Clock_time actual, Clock_time expected)
 {
-	return (actual.Hours == expected.Hours) & (actual.Minutes == expected.Minutes);
+	return (actual.Hours == expected.Hours) && (actual.Minutes == expected.Minutes);
 }

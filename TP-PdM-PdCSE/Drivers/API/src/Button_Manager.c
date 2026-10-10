@@ -2,24 +2,24 @@
  * Button_Manager.c
  *
  *  Created on: 3 oct. 2026
- *      Author: julia
+ *      Author: Julian Ferreira
  */
 
 #include "general_def.h"
 #include "ports.h"
 #include "Button_Manager.h"
 
-/**
- * @brief Possible states of the debounce FSM.
- */
 static void setShortPress( ButtonId_t btnId  );
 static void setLongPress( ButtonId_t btnId  );
 
+/**
+ * @brief Possible states of the debounce FSM.
+ */
 typedef enum{
 	BUTTON_UP,       /**< Button is released (idle). */
 	BUTTON_FALLING,  /**< Falling edge detected, waiting for debounce confirmation. */
 	BUTTON_DOWN,     /**< Button is confirmed pressed. */
-	BUTTON_RAISING,  /**< Rising edge detected, waiting for debounce confirmation. */
+	BUTTON_RISING,  /**< Rising edge detected, waiting for debounce confirmation. */
 } debounceState_t;
 
 typedef struct{
@@ -27,9 +27,9 @@ typedef struct{
 	tick_t pressStart;
 	uint32_t pin;
 	GPIO_TypeDef *port;
-	delay_t bounceDealy;
-	bool_t shortPress;
-	bool_t longPress;
+	delay_t bounceDelay;
+	bool_t shortPressFlag;
+	bool_t longPressFlag;
 	bool_t longFired;
 }buttonDebounce;
 
@@ -45,7 +45,7 @@ static buttonDebounce buttons[] =
 #define DEBOUNCE_TIME_MS	40		/**< @brief Debounce time in milliseconds. */
 #define LONG_PRESS_TIME_MS	2000	/**< @brief Long press time in milliseconds. */
 
-void initButtons( void ){
+void Buttons_Init( void ){
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
 	/* GPIO Ports Clock Enable */
@@ -92,9 +92,9 @@ void debounceFSM_init( void )
 {
 	for (uint8_t btnId = 0; btnId < BTN_COUNT; btnId++) {
 		buttons[btnId].currentState = BUTTON_UP;
-		delayInit( &buttons[btnId].bounceDealy, DEBOUNCE_TIME_MS );
-		buttons[btnId].shortPress = false;
-		buttons[btnId].longPress = false;
+		delayInit( &buttons[btnId].bounceDelay, DEBOUNCE_TIME_MS );
+		buttons[btnId].shortPressFlag = false;
+		buttons[btnId].longPressFlag = false;
 		buttons[btnId].longFired = false;
 	}
 }
@@ -102,9 +102,9 @@ void debounceFSM_init( void )
 /**
  * @brief Updates the debounce FSM based on the current button state.
  *
- * Reads the B1 button GPIO pin and transitions through the FSM states.
- * When a stable press or release is confirmed after the debounce delay,
- * the corresponding callback (buttonPressed / buttonReleased) is invoked.
+ * Reads the GPIO pin of every button and transitions through the FSM states.
+ * A long press flag is set once the button is held for LONG_PRESS_TIME_MS,
+ * and a short press flag is set on release if no long press was detected.
  */
 void debounceFSM_update( void )
 {
@@ -120,7 +120,7 @@ void debounceFSM_update( void )
 			break;
 
 			case BUTTON_FALLING:
-				if (delayRead(&button->bounceDealy))
+				if (delayRead(&button->bounceDelay))
 				{
 					if (HAL_GPIO_ReadPin(button->port, button->pin) == BUTTON_PRESSED_LEVEL)
 					{
@@ -139,12 +139,12 @@ void debounceFSM_update( void )
 				setLongPress( btnId );
 				if (HAL_GPIO_ReadPin(button->port, button->pin) != BUTTON_PRESSED_LEVEL)
 				{
-					button->currentState = BUTTON_RAISING;
+					button->currentState = BUTTON_RISING;
 				}
 			break;
 
-			case BUTTON_RAISING:
-				if (delayRead(&button->bounceDealy))
+			case BUTTON_RISING:
+				if (delayRead(&button->bounceDelay))
 				{
 					if (HAL_GPIO_ReadPin(button->port, button->pin) != BUTTON_PRESSED_LEVEL)
 					{
@@ -166,7 +166,7 @@ void debounceFSM_update( void )
 
 static void setShortPress( ButtonId_t btnId  )
 {
-	buttons[btnId].shortPress = true;
+	buttons[btnId].shortPressFlag = true;
 }
 
 bool_t shortPress( ButtonId_t btnId )
@@ -175,12 +175,12 @@ bool_t shortPress( ButtonId_t btnId )
 		return false;
 	}
 
-	if (buttons[btnId].shortPress)
+	if (buttons[btnId].shortPressFlag)
 	{
-		buttons[btnId].shortPress = false;
+		buttons[btnId].shortPressFlag = false;
 		return true;
 	}
-	return buttons[btnId].shortPress;
+	return buttons[btnId].shortPressFlag;
 }
 
 static void setLongPress( ButtonId_t btnId  )
@@ -188,14 +188,14 @@ static void setLongPress( ButtonId_t btnId  )
 	buttonDebounce *b = &buttons[btnId];
 	if (!b->longFired && HAL_GetTick() - b->pressStart >= LONG_PRESS_TIME_MS) {
 		b->longFired = true;    // una sola vez por pulsación
-		b->longPress = true;
+		b->longPressFlag = true;
 	}
 }
 
 bool_t buttonIsHeld( ButtonId_t btnId )   // para el combo, no consume nada
 {
 	if ( btnId >= BTN_COUNT ) {
-			return false;
+		return false;
 	}
 
 	return buttons[btnId].longFired && buttons[btnId].currentState != BUTTON_UP;
@@ -204,22 +204,22 @@ bool_t buttonIsHeld( ButtonId_t btnId )   // para el combo, no consume nada
 bool_t longPress( ButtonId_t btnId )
 {
 	if ( btnId >= BTN_COUNT ) {
-			return false;
+		return false;
 	}
 
-	if (buttons[btnId].longPress)
+	if (buttons[btnId].longPressFlag)
 	{
-		buttons[btnId].longPress = false;
+		buttons[btnId].longPressFlag = false;
 		return true;
 	}
-	return buttons[btnId].longPress;
+	return buttons[btnId].longPressFlag;
 }
 
 void clearKeys( void )
 {
 	for (uint8_t i = 0; i < BTN_COUNT; i++) {
-		buttons[i].shortPress = false;
-		buttons[i].longPress = false;
+		buttons[i].shortPressFlag = false;
+		buttons[i].longPressFlag = false;
 	}
 }
 

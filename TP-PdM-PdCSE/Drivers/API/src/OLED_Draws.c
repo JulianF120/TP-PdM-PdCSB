@@ -1,14 +1,14 @@
 /*
- * LCD_Draws.c
+ * OLED_Draws.c
  *
  *  Created on: 4 oct. 2026
- *      Author: julia
+ *      Author: Julian Ferreira
  */
 
 #include "general_def.h"
-#include "LCD_Draws.h"
+#include "OLED_Draws.h"
 
-/* Buffer de Pantalla Completa: 128x64 píxeles (1024 bytes) */
+/* Bitmaps para la pantalla OLED 128x64 */
 /* Formato: columnas x páginas de 8 filas, bit 0 = fila superior de cada página */
 /* Dígitos: estilo 7 segmentos, trazo de 3 px, ocupan columnas 2..13 */
 
@@ -144,140 +144,130 @@ const OLED_Bitmap_t bm_num_9 = {
 
 /* Dimensiones: 8 columnas x 24 px (3 páginas) - 24 bytes */
 /* Puntos de 4x4 px en columnas 2..5, filas 5..8 y 15..18 */
-static const uint8_t bm_num_doble_dot_data[COLON_SIZE] = {
+static const uint8_t bm_colon_data[COLON_SIZE] = {
     /* Pág 0 */ 0x00, 0x00, 0xE0, 0xE0, 0xE0, 0xE0, 0x00, 0x00,
     /* Pág 1 */ 0x00, 0x00, 0x81, 0x81, 0x81, 0x81, 0x00, 0x00,
     /* Pág 2 */ 0x00, 0x00, 0x07, 0x07, 0x07, 0x07, 0x00, 0x00
 };
 
-const OLED_Bitmap_t bm_num_doble_dot = {
+const OLED_Bitmap_t bm_colon = {
     .width = COLON_WIDTH,
     .pages = DIGIT_PAGES,
-    .data  = bm_num_doble_dot_data
+    .data  = bm_colon_data
 };
 
 /* Dimensiones: 16 columnas x 24 px (3 páginas) - 48 bytes */
 /* Campana sólida, sin ondas */
-static const uint8_t bm_alrm_data[ICON_SIZE] = {
+static const uint8_t bm_alarm_data[ICON_SIZE] = {
     /* Pág 0 */ 0x00, 0x00, 0x00, 0xC0, 0xF0, 0xF8, 0xFC, 0xFF, 0xFF, 0xFC, 0xF8, 0xF0, 0xC0, 0x00, 0x00, 0x00,
     /* Pág 1 */ 0x00, 0x00, 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x00,
     /* Pág 2 */ 0x00, 0x0E, 0x0F, 0x0F, 0x0F, 0x0F, 0x6F, 0xEF, 0xEF, 0x6F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0E, 0x00
 };
 
-const OLED_Bitmap_t bm_alrm = {
+const OLED_Bitmap_t bm_alarm = {
     .width = ICON_WIDTH,
     .pages = ICON_PAGES,
-    .data  = bm_alrm_data
+    .data  = bm_alarm_data
 };
 
 /* Dimensiones: 16 columnas x 24 px (3 páginas) - 48 bytes */
 /* Campana con ondas de "sonando" a los costados */
-static const uint8_t bm_alrm_data2[ICON_SIZE] = {
+static const uint8_t bm_alarm_ring_data[ICON_SIZE] = {
     /* Pág 0 */ 0x00, 0xC0, 0x00, 0xC0, 0xF0, 0xF8, 0xFC, 0xFF, 0xFF, 0xFC, 0xF8, 0xF0, 0xC0, 0x00, 0xC0, 0x00,
     /* Pág 1 */ 0x0F, 0x30, 0x80, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x80, 0x30, 0x0F,
     /* Pág 2 */ 0x00, 0x0E, 0x0F, 0x0F, 0x0F, 0x0F, 0x6F, 0xEF, 0xEF, 0x6F, 0x0F, 0x0F, 0x0F, 0x0F, 0x0E, 0x00
 };
 
-const OLED_Bitmap_t bm_alrm2 = {
+const OLED_Bitmap_t bm_alarm_ring = {
     .width = ICON_WIDTH,
     .pages = ICON_PAGES,
-    .data  = bm_alrm_data2
+    .data  = bm_alarm_ring_data
 };
 
-OLED_Bitmap_t get_bm_num_1()
+OLED_Bitmap_t get_bm_num_1( void )
 {
 	return bm_num_1;
 }
 
-OLED_Bitmap_t get_bm_num_2()
+OLED_Bitmap_t get_bm_num_2( void )
 {
 	return bm_num_2;
 }
 
-OLED_Bitmap_t get_bm_num_3()
+OLED_Bitmap_t get_bm_num_3( void )
 {
 	return bm_num_3;
 }
 
-OLED_Bitmap_t get_bm_num_4()
+OLED_Bitmap_t get_bm_num_4( void )
 {
 	return bm_num_4;
 }
 
-OLED_Bitmap_t get_bm_num_5()
+OLED_Bitmap_t get_bm_num_5( void )
 {
 	return bm_num_5;
 }
 
-OLED_Bitmap_t get_bm_num_6()
+OLED_Bitmap_t get_bm_num_6( void )
 {
 	return bm_num_6;
 }
 
-OLED_Bitmap_t get_bm_num_7()
+OLED_Bitmap_t get_bm_num_7( void )
 {
 	return bm_num_7;
 }
 
-OLED_Bitmap_t get_bm_num_8()
+OLED_Bitmap_t get_bm_num_8( void )
 {
 	return bm_num_8;
 }
 
-OLED_Bitmap_t get_bm_num_9()
+OLED_Bitmap_t get_bm_num_9( void )
 {
 	return bm_num_9;
 }
 
-OLED_Bitmap_t get_bm_num_0()
+OLED_Bitmap_t get_bm_num_0( void )
 {
 	return bm_num_0;
 }
 
-OLED_Bitmap_t get_bm_num_doble_dot()
+OLED_Bitmap_t get_bm_colon( void )
 {
-	return bm_num_doble_dot;
+	return bm_colon;
 }
 
-OLED_Bitmap_t get_bm_alrm2()
+OLED_Bitmap_t get_bm_alarm_ring( void )
 {
-	return bm_alrm2;
+	return bm_alarm_ring;
 }
 
-OLED_Bitmap_t getNumberDraw( uint8_t number )
+OLED_Bitmap_t getDigitBitmap( uint8_t number )
 {
 	switch(number)
 	{
 	case 1:
 		return get_bm_num_1();
-		break;
 	case 2:
 		return get_bm_num_2();
-		break;
 	case 3:
 		return get_bm_num_3();
-		break;
 	case 4:
 		return get_bm_num_4();
-		break;
 	case 5:
 		return get_bm_num_5();
-		break;
 	case 6:
 		return get_bm_num_6();
-		break;
 	case 7:
 		return get_bm_num_7();
-		break;
 	case 8:
 		return get_bm_num_8();
-		break;
 	case 9:
 		return get_bm_num_9();
-		break;
 	case 0:
 		return get_bm_num_0();
-		break;
 	}
 
 	return get_bm_num_0();
