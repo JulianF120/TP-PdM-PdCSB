@@ -91,6 +91,7 @@ void alarmFSM_update( )
 		alarmRingState();
 		break;
 	default:
+		changeState( IDLE );
 		break;
 	}
 }

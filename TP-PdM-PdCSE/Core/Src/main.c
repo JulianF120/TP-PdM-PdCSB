@@ -22,13 +22,16 @@
 #include "LCD.h"
 #include "LCD_Draws.h"
 #include "alarm.h"
+#include "ErrorManager.h"
 
 void SystemClock_Config(void);
 void Error_Handler(void);
 
 int main(void)
 {
-    HAL_Init();
+    if ( HAL_Init() != HAL_OK ) {
+    	Error_Handler();
+    }
     SystemClock_Config();
     initButtons();
     initRTC();
@@ -84,10 +87,4 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-void Error_Handler(void) {
-    __disable_irq();
-    while (1) {
-    }
 }

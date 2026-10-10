@@ -7,7 +7,10 @@
 
 #ifndef API_INC_RTC_H_
 #define API_INC_RTC_H_
-
+#define MIN_HOUR	0
+#define MAX_HOUR	23
+#define MAX_MIN		59
+#define MIN_MIN		0
 #include "general_def.h"
 
 typedef struct {

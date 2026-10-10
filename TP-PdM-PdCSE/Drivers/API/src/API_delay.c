@@ -9,7 +9,7 @@
  */
 
 #include "API_delay.h"
-
+#include "ErrorManager.h"
 /**
  * @brief Initializes a delay structure with the given duration.
  *
@@ -23,7 +23,7 @@
 void delayInit( delay_t * delay, tick_t duration ){
 
 	if (delay == NULL || duration == 0) {
-		return;
+		Error_Handler();
 	}
 
 	delay->running = false;
@@ -87,5 +87,9 @@ void delayWrite( delay_t * delay, tick_t duration ){
  * @return true if the delay is running, false otherwise.
  */
 bool_t delayIsRunning(delay_t * delay){
+	if ( delay == NULL ) {
+		return false;
+	}
+
 	return delay->running;
 }

@@ -9,12 +9,10 @@
 #include "RTC_port.h"
 #include "ports.h"
 #include "RTC.h"
+#include "ErrorManager.h"
 
 #define DS1307_ADDR ( 0x68 << 1 )
-#define MIN_HOUR	0
-#define MAX_HOUR	23
-#define MAX_MIN		59
-#define MIN_MIN		0
+
 
 static void RTC_Init( void );
 
@@ -56,7 +54,10 @@ void initRTC()
 	hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
 	hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
 
-	HAL_I2C_Init(&hi2c1);
+	if ( HAL_OK != HAL_I2C_Init(&hi2c1)) {
+		Error_Handler();
+	}
+
 	RTC_Init();
 }
 
@@ -66,10 +67,10 @@ static void RTC_Init( void )
     uint8_t reg_ctrl = 0x10;    // SQWE = 1, Frecuencia = 1 Hz (registro 0x07)
 
     // 1. Activar oscilador (Registro 0x00)
-    RTC_send_data(&hi2c1, DS1307_ADDR, 0x00, I2C_MEMADD_SIZE_8BIT, &reg_sec, 1, HAL_MAX_DELAY);
+    RTC_send_data(&hi2c1, DS1307_ADDR, 0x00, I2C_MEMADD_SIZE_8BIT, &reg_sec, 1, 1000);
 
     // 2. Habilitar onda cuadrada a 1 Hz en el pin SQW (Registro 0x07)
-    RTC_send_data(&hi2c1, DS1307_ADDR, 0x07, I2C_MEMADD_SIZE_8BIT, &reg_ctrl, 1, HAL_MAX_DELAY);
+    RTC_send_data(&hi2c1, DS1307_ADDR, 0x07, I2C_MEMADD_SIZE_8BIT, &reg_ctrl, 1, 1000);
 }
 
 static uint8_t decToBcd( uint8_t val )
@@ -84,12 +85,20 @@ static uint8_t bcdToDec( uint8_t val )
 
 void initClock( Clock_time *clock )
 {
+	if ( clock == NULL ) {
+		Error_Handler();
+	}
+
 	clock->Hours = MIN_HOUR;
 	clock->Minutes = MIN_MIN;
 }
 
 void addHour( Clock_time *clock )
 {
+	if ( clock == NULL ) {
+		Error_Handler();
+	}
+
 	if ( clock->Hours < MAX_HOUR ) {
 		clock->Hours += 1;
 	}
@@ -100,6 +109,10 @@ void addHour( Clock_time *clock )
 
 void substractHour( Clock_time *clock )
 {
+	if ( clock == NULL ) {
+		Error_Handler();
+	}
+
 	if ( clock->Hours > MIN_HOUR ) {
 			clock->Hours -= 1;
 	}
@@ -110,6 +123,10 @@ void substractHour( Clock_time *clock )
 
 void addMin( Clock_time *clock )
 {
+	if ( clock == NULL ) {
+		Error_Handler();
+	}
+
 	if ( clock->Minutes < MAX_MIN ) {
 		clock->Minutes += 1;
 	}
@@ -120,6 +137,10 @@ void addMin( Clock_time *clock )
 
 void substractMin( Clock_time *clock )
 {
+	if ( clock == NULL ) {
+		Error_Handler();
+	}
+
 	if ( clock->Minutes > MIN_MIN ) {
 			clock->Minutes -= 1;
 	}
@@ -130,18 +151,38 @@ void substractMin( Clock_time *clock )
 
 void RTC_SetTime( Clock_time clock)
 {
+
+	if (clock.Hours < MIN_HOUR || clock.Hours > MAX_HOUR) {
+		return;
+	}
+
+	if (clock.Minutes < MIN_MIN || clock.Minutes > MAX_MIN) {
+			return;
+	}
+
 	uint8_t data[3];
-	data[0] =  0x7F;
+	data[0] =  0x00;
 	data[1] = decToBcd(clock.Minutes) & 0x7F;
 	data[2] = decToBcd(clock.Hours) & 0x3F;
-	RTC_send_data( &hi2c1, DS1307_ADDR, 0x00, I2C_MEMADD_SIZE_8BIT, data, 3, HAL_MAX_DELAY);
+	RTC_send_data( &hi2c1, DS1307_ADDR, 0x00, I2C_MEMADD_SIZE_8BIT, data, 3, 1000);
 }
 
-//Revisar ver de hacer checkeo
 void RTC_ReadTime( Clock_time *clock )
 {
+	if ( clock == NULL ) {
+		return;
+	}
+
+	if (clock->Hours < MIN_HOUR || clock->Hours > MAX_HOUR) {
+		return;
+	}
+
+	if (clock->Minutes < MIN_MIN || clock->Minutes > MAX_MIN) {
+			return;
+	}
+
 	uint8_t data[3];
-	RTC_read_data(&hi2c1, DS1307_ADDR, 0x01, I2C_MEMADD_SIZE_8BIT, data, 2, HAL_MAX_DELAY);
+	RTC_read_data(&hi2c1, DS1307_ADDR, 0x01, I2C_MEMADD_SIZE_8BIT, data, 2, 1000);
 
 	clock->Minutes = bcdToDec(data[0] & 0x7F);
 	clock->Hours = bcdToDec(data[1] & 0x3F);

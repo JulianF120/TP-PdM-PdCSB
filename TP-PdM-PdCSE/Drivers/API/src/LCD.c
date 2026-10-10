@@ -12,6 +12,7 @@
 #include "LCD_port.h"
 #include "RTC.h"
 #include "LCD.h"
+#include "ErrorManager.h"
 
 #define BLINK_INTERVAL 1
 
@@ -79,31 +80,43 @@ void LCDInit( void )
 	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
 	hspi1.Init.CRCPolynomial = 7;
 
-	HAL_SPI_Init(&hspi1);
+	if ( HAL_SPI_Init(&hspi1) != HAL_OK ) {
+		Error_Handler();
+	}
 
 	LCD_Init();
 }
 
-static void LCD_Write_Command(uint8_t cmd) {
+static bool_t LCD_Write_Command(uint8_t cmd) {
+	bool_t ret;
+
     HAL_GPIO_WritePin(SPI_LCD_DC_PORT, SPI_LCD_DC_PIN, GPIO_PIN_RESET); // DC = 0 (Comando)
     HAL_GPIO_WritePin(SPI_LCD_CS_PORT, SPI_LCD_CS_PIN, GPIO_PIN_RESET); // CS = 0 (Activo)
 
-    LCD_send_data(&hspi1, &cmd, 1, HAL_MAX_DELAY);
+    ret = LCD_send_data(&hspi1, &cmd, 1, 1000 );
 
     HAL_GPIO_WritePin(SPI_LCD_CS_PORT, SPI_LCD_CS_PIN, GPIO_PIN_SET);   // CS = 1 (Inactivo)
+
+    return ret;
 }
 
-static void LCD_Write_Data(uint8_t *data, uint16_t size) {
-    HAL_GPIO_WritePin(SPI_LCD_DC_PORT, SPI_LCD_DC_PIN, GPIO_PIN_SET);   // DC = 1 (Dato)
+static bool_t LCD_Write_Data(uint8_t *data, uint16_t size) {
+    bool_t ret;
+
+	HAL_GPIO_WritePin(SPI_LCD_DC_PORT, SPI_LCD_DC_PIN, GPIO_PIN_SET);   // DC = 1 (Dato)
     HAL_GPIO_WritePin(SPI_LCD_CS_PORT, SPI_LCD_CS_PIN, GPIO_PIN_RESET); // CS = 0 (Activo)
 
-    LCD_send_data(&hspi1, data, size, HAL_MAX_DELAY);
+    ret = LCD_send_data(&hspi1, data, size, 1000 );
 
     HAL_GPIO_WritePin(SPI_LCD_CS_PORT, SPI_LCD_CS_PIN, GPIO_PIN_SET);   // CS = 1 (Inactivo)
+
+    return ret;
 }
 
 static void LCD_Init( void )
 {
+	bool_t notError = true;
+
 	HAL_Delay(100); // Esperar a que se estabilice VCC al encender
 	// Secuencia de Reset físico por hardware
 	HAL_GPIO_WritePin(SPI_LCD_RST_PORT, SPI_LCD_RST_PIN, GPIO_PIN_SET);
@@ -113,31 +126,35 @@ static void LCD_Init( void )
 	HAL_GPIO_WritePin(SPI_LCD_RST_PORT, SPI_LCD_RST_PIN, GPIO_PIN_SET);
 	HAL_Delay(20);
 
-	LCD_Write_Command(0xAE); // Display OFF
-	LCD_Write_Command(0xD5); // Set Display Clock Divide Ratio
-	LCD_Write_Command(0x80);
-	LCD_Write_Command(0xA8); // Set Multiplex Ratio
-	LCD_Write_Command(0x3F);
-	LCD_Write_Command(0xD3); // Set Display Offset
-	LCD_Write_Command(0x00);
-	LCD_Write_Command(0x40); // Set Display Start Line
-	LCD_Write_Command(0x8D); // Charge Pump Setting
-	LCD_Write_Command(0x14); // Enable Charge Pump (Fundamental para encender el panel)
-	LCD_Write_Command(0x20); // Memory Addressing Mode
-	LCD_Write_Command(0x00); // Horizontal Addressing Mode
-	LCD_Write_Command(0xA1); // Set Segment Re-map
-	LCD_Write_Command(0xC8); // Set COM Output Scan Direction
-	LCD_Write_Command(0xDA); // Set COM Pins Hardware Configuration
-	LCD_Write_Command(0x12);
-	LCD_Write_Command(0x81); // Set Contrast Control
-	LCD_Write_Command(0xCF);
-	LCD_Write_Command(0xD9); // Set Pre-charge Period
-	LCD_Write_Command(0xF1);
-	LCD_Write_Command(0xDB); // Set VCOMH Deselect Level
-	LCD_Write_Command(0x40);
-	LCD_Write_Command(0xA4); // Entire Display ON (Resume to RAM content)
-	LCD_Write_Command(0xA6); // Set Normal Display
-	LCD_Write_Command(0xAF); // Display ON
+	notError &= LCD_Write_Command(0xAE); // Display OFF
+	notError &= LCD_Write_Command(0xD5); // Set Display Clock Divide Ratio
+	notError &= LCD_Write_Command(0x80);
+	notError &= LCD_Write_Command(0xA8); // Set Multiplex Ratio
+	notError &= LCD_Write_Command(0x3F);
+	notError &= LCD_Write_Command(0xD3); // Set Display Offset
+	notError &= LCD_Write_Command(0x00);
+	notError &= LCD_Write_Command(0x40); // Set Display Start Line
+	notError &= LCD_Write_Command(0x8D); // Charge Pump Setting
+	notError &= LCD_Write_Command(0x14); // Enable Charge Pump (Fundamental para encender el panel)
+	notError &= LCD_Write_Command(0x20); // Memory Addressing Mode
+	notError &= LCD_Write_Command(0x00); // Horizontal Addressing Mode
+	notError &= LCD_Write_Command(0xA1); // Set Segment Re-map
+	notError &= LCD_Write_Command(0xC8); // Set COM Output Scan Direction
+	notError &= LCD_Write_Command(0xDA); // Set COM Pins Hardware Configuration
+	notError &= LCD_Write_Command(0x12);
+	notError &= LCD_Write_Command(0x81); // Set Contrast Control
+	notError &= LCD_Write_Command(0xCF);
+	notError &= LCD_Write_Command(0xD9); // Set Pre-charge Period
+	notError &= LCD_Write_Command(0xF1);
+	notError &= LCD_Write_Command(0xDB); // Set VCOMH Deselect Level
+	notError &= LCD_Write_Command(0x40);
+	notError &= LCD_Write_Command(0xA4); // Entire Display ON (Resume to RAM content)
+	notError &= LCD_Write_Command(0xA6); // Set Normal Display
+	notError &= LCD_Write_Command(0xAF); // Display ON
+
+	if ( !notError ) {
+		Error_Handler();
+	}
 }
 
 void LCD_Clear( void ) {
@@ -155,8 +172,21 @@ void LCD_Clear( void ) {
     }
 }
 
-void LED_Draw( uint8_t start_col, uint8_t start_page, OLED_Bitmap_t bitmap ) {
-    // Ventana acotada a 8 columnas de ancho (start_col a start_col + 7)
+void LED_Draw( uint8_t start_col, uint8_t start_page, OLED_Bitmap_t bitmap )
+{
+	if ( bitmap.data == NULL) {
+		return;
+	}
+
+    if ( start_col + bitmap.width > 128 ) {
+    	return;
+    }
+
+    if ( start_page + bitmap.pages > 8 ) {
+    	return;
+    }
+
+	// Ventana acotada a 8 columnas de ancho (start_col a start_col + 7)
     LCD_Write_Command(0x21);
     LCD_Write_Command(start_col);
     LCD_Write_Command(start_col + bitmap.width);
@@ -172,6 +202,18 @@ void LED_Draw( uint8_t start_col, uint8_t start_page, OLED_Bitmap_t bitmap ) {
 
 static void LED_ClearArea( uint8_t start_col, uint8_t start_page, uint8_t width, uint8_t pages )
 {
+	if ( width == 0 || pages == 0 ) {
+		return;
+	}
+
+	if ( start_col + width > 128 ) {
+		return;
+	}
+
+	if ( start_page + pages > 8 ) {
+		return;
+	}
+
 	uint8_t zero = 0x00;
 	LCD_Write_Command(0x21);
 	LCD_Write_Command(start_col);
@@ -184,16 +226,24 @@ static void LED_ClearArea( uint8_t start_col, uint8_t start_page, uint8_t width,
 	}
 }
 
-void LED_DrawTime( Clock_time clk, bool_t alarmOn, BlinkField_t hidden )
+void LED_DrawTime( Clock_time clock, bool_t alarmOn, BlinkField_t hidden )
 {
+	if (clock.Hours < MIN_HOUR || clock.Hours > MAX_HOUR) {
+		return;
+	}
+
+	if (clock.Minutes < MIN_MIN || clock.Minutes > MAX_MIN) {
+			return;
+	}
+
 	OLED_Bitmap_t num = getNumberDraw( 0 );
 
 	if ( hidden == BLINK_HOURS ) {
 		LED_ClearArea( Hour_Dec, 2, num.width, num.pages );
 		LED_ClearArea( Hour_Unit, 2, num.width, num.pages );
 	} else {
-		LED_Draw( Hour_Dec, 2, getNumberDraw( clk.Hours / 10 ) );
-		LED_Draw( Hour_Unit, 2, getNumberDraw( clk.Hours % 10 ) );
+		LED_Draw( Hour_Dec, 2, getNumberDraw( clock.Hours / 10 ) );
+		LED_Draw( Hour_Unit, 2, getNumberDraw( clock.Hours % 10 ) );
 	}
 
 	LED_Draw( Doble_Dot, 2, get_bm_num_doble_dot() );
@@ -202,8 +252,8 @@ void LED_DrawTime( Clock_time clk, bool_t alarmOn, BlinkField_t hidden )
 		LED_ClearArea( Min_Dec, 2, num.width, num.pages );
 		LED_ClearArea( Min_Unit, 2, num.width, num.pages );
 	} else {
-		LED_Draw( Min_Dec, 2, getNumberDraw( clk.Minutes / 10 ) );
-		LED_Draw( Min_Unit, 2, getNumberDraw( clk.Minutes % 10 ) );
+		LED_Draw( Min_Dec, 2, getNumberDraw( clock.Minutes / 10 ) );
+		LED_Draw( Min_Unit, 2, getNumberDraw( clock.Minutes % 10 ) );
 	}
 
 	OLED_Bitmap_t icon = get_bm_alrm2();

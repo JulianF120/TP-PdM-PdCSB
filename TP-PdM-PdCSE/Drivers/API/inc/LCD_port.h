@@ -8,6 +8,6 @@
 #ifndef API_INC_LCD_PORT_H_
 #define API_INC_LCD_PORT_H_
 
-void LCD_send_data(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+bool_t LCD_send_data(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size, uint32_t Timeout);
 
 #endif /* API_INC_LCD_PORT_H_ */

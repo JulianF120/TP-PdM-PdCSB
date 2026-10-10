@@ -171,6 +171,10 @@ static void setShortPress( ButtonId_t btnId  )
 
 bool_t shortPress( ButtonId_t btnId )
 {
+	if ( btnId >= BTN_COUNT ) {
+		return false;
+	}
+
 	if (buttons[btnId].shortPress)
 	{
 		buttons[btnId].shortPress = false;
@@ -190,11 +194,19 @@ static void setLongPress( ButtonId_t btnId  )
 
 bool_t buttonIsHeld( ButtonId_t btnId )   // para el combo, no consume nada
 {
+	if ( btnId >= BTN_COUNT ) {
+			return false;
+	}
+
 	return buttons[btnId].longFired && buttons[btnId].currentState != BUTTON_UP;
 }
 
 bool_t longPress( ButtonId_t btnId )
 {
+	if ( btnId >= BTN_COUNT ) {
+			return false;
+	}
+
 	if (buttons[btnId].longPress)
 	{
 		buttons[btnId].longPress = false;
