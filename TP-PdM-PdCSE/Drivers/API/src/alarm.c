@@ -220,7 +220,7 @@ static void alarmRingState()
 {
 	if ( shortPress( BTN_START ) ) {
 		changeState( IDLE );
-		HAL_GPIO_WritePin(BUZZER_PORT, BUZZER_PIN, 0);
+		HAL_GPIO_WritePin(BUZZER_PORT, BUZZER_PIN, BUZZER_OFF_LEVEL);
 		ringOff = true;
 	}
 	BuzzerManager();

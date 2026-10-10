@@ -8,6 +8,17 @@
 #ifndef API_INC_LCD_DRAWS_H_
 #define API_INC_LCD_DRAWS_H_
 
+#define DIGIT_WIDTH		16		// columnas de cada dígito
+#define DIGIT_PAGES		3		// 24 px de alto
+#define DIGIT_SIZE		( DIGIT_WIDTH * DIGIT_PAGES )
+
+#define COLON_WIDTH		8		// columnas de los dos puntos
+#define COLON_SIZE		( COLON_WIDTH * DIGIT_PAGES )
+
+#define ICON_WIDTH		16		// columnas del ícono de alarma
+#define ICON_PAGES		3
+#define ICON_SIZE		( ICON_WIDTH * ICON_PAGES )
+
 typedef struct {
     uint8_t width;        // Ancho en columnas (eje X)
     uint8_t pages;        // Alto en páginas (cada página = 8 píxeles verticales)

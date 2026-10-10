@@ -42,8 +42,8 @@ static buttonDebounce buttons[] =
 		{.currentState = BUTTON_UP, .pressStart = 0, .port = BUTTON_RIGHT_PORT, .pin = BUTTON_RIGHT_PIN},
 };
 
-static uint8_t debounceTime = 40;     /**< @brief Debounce time in milliseconds. */
-const uint16_t longPressTime = 2000; //miliseconds
+#define DEBOUNCE_TIME_MS	40		/**< @brief Debounce time in milliseconds. */
+#define LONG_PRESS_TIME_MS	2000	/**< @brief Long press time in milliseconds. */
 
 void initButtons( void ){
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -92,7 +92,7 @@ void debounceFSM_init( void )
 {
 	for (uint8_t btnId = 0; btnId < BTN_COUNT; btnId++) {
 		buttons[btnId].currentState = BUTTON_UP;
-		delayInit( &buttons[btnId].bounceDealy, debounceTime );
+		delayInit( &buttons[btnId].bounceDealy, DEBOUNCE_TIME_MS );
 		buttons[btnId].shortPress = false;
 		buttons[btnId].longPress = false;
 		buttons[btnId].longFired = false;
@@ -186,7 +186,7 @@ bool_t shortPress( ButtonId_t btnId )
 static void setLongPress( ButtonId_t btnId  )
 {
 	buttonDebounce *b = &buttons[btnId];
-	if (!b->longFired && HAL_GetTick() - b->pressStart >= longPressTime) {
+	if (!b->longFired && HAL_GetTick() - b->pressStart >= LONG_PRESS_TIME_MS) {
 		b->longFired = true;    // una sola vez por pulsación
 		b->longPress = true;
 	}
