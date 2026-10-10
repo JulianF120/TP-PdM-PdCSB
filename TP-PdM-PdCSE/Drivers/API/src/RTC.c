@@ -152,11 +152,11 @@ void substractMin( Clock_time *clock )
 void RTC_SetTime( Clock_time clock)
 {
 
-	if (clock.Hours < MIN_HOUR || clock.Hours > MAX_HOUR) {
+	if (clock.Hours > MAX_HOUR) {
 		return;
 	}
 
-	if (clock.Minutes < MIN_MIN || clock.Minutes > MAX_MIN) {
+	if (clock.Minutes > MAX_MIN) {
 			return;
 	}
 
@@ -173,11 +173,11 @@ void RTC_ReadTime( Clock_time *clock )
 		return;
 	}
 
-	if (clock->Hours < MIN_HOUR || clock->Hours > MAX_HOUR) {
+	if (clock->Hours > MAX_HOUR) {
 		return;
 	}
 
-	if (clock->Minutes < MIN_MIN || clock->Minutes > MAX_MIN) {
+	if (clock->Minutes > MAX_MIN) {
 			return;
 	}
 

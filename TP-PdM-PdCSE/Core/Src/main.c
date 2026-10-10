@@ -25,7 +25,6 @@
 #include "ErrorManager.h"
 
 void SystemClock_Config(void);
-void Error_Handler(void);
 
 int main(void)
 {

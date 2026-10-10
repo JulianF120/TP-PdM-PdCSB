@@ -14,7 +14,8 @@
 #include "LCD.h"
 #include "ErrorManager.h"
 
-#define BLINK_INTERVAL 1
+#define LCD_WIDTH	128		// columnas
+#define LCD_PAGES	8		// 64 px de alto / 8 px por página
 
 static const uint8_t Hour_Dec = 8;
 static const uint8_t Hour_Unit = 24;
@@ -178,25 +179,25 @@ void LED_Draw( uint8_t start_col, uint8_t start_page, OLED_Bitmap_t bitmap )
 		return;
 	}
 
-    if ( start_col + bitmap.width > 128 ) {
+    if ( start_col + bitmap.width > LCD_WIDTH ) {
     	return;
     }
 
-    if ( start_page + bitmap.pages > 8 ) {
+    if ( start_page + bitmap.pages > LCD_PAGES ) {
     	return;
     }
 
-	// Ventana acotada a 8 columnas de ancho (start_col a start_col + 7)
+	// Ventana de columnas: start_col a start_col + width - 1
     LCD_Write_Command(0x21);
     LCD_Write_Command(start_col);
-    LCD_Write_Command(start_col + bitmap.width);
+    LCD_Write_Command(start_col + bitmap.width - 1);
 
-    // Ventana acotada a 2 páginas de alto (start_page a start_page + 1)
+    // Ventana de páginas: start_page a start_page + pages - 1
     LCD_Write_Command(0x22);
     LCD_Write_Command(start_page);
-    LCD_Write_Command(start_page + bitmap.pages);
+    LCD_Write_Command(start_page + bitmap.pages - 1);
 
-    // Al enviar los 16 bytes, los primeros 8 pintan arriba y los otros 8 abajo automáticamente
+    // Con direccionamiento horizontal, los bytes llenan la ventana página por página
     LCD_Write_Data((uint8_t*)bitmap.data, (uint16_t)bitmap.width * bitmap.pages);
 }
 
@@ -206,11 +207,11 @@ static void LED_ClearArea( uint8_t start_col, uint8_t start_page, uint8_t width,
 		return;
 	}
 
-	if ( start_col + width > 128 ) {
+	if ( start_col + width > LCD_WIDTH ) {
 		return;
 	}
 
-	if ( start_page + pages > 8 ) {
+	if ( start_page + pages > LCD_PAGES ) {
 		return;
 	}
 
@@ -228,11 +229,11 @@ static void LED_ClearArea( uint8_t start_col, uint8_t start_page, uint8_t width,
 
 void LED_DrawTime( Clock_time clock, bool_t alarmOn, BlinkField_t hidden )
 {
-	if (clock.Hours < MIN_HOUR || clock.Hours > MAX_HOUR) {
+	if (clock.Hours > MAX_HOUR) {
 		return;
 	}
 
-	if (clock.Minutes < MIN_MIN || clock.Minutes > MAX_MIN) {
+	if (clock.Minutes > MAX_MIN) {
 			return;
 	}
 
