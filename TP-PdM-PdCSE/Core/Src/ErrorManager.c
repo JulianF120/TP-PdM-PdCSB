@@ -1,8 +1,8 @@
-/*
- * ErrorManager.c
- *
- *  Created on: 9 oct. 2026
- *      Author: Julian Ferreira
+/**
+ * @file ErrorManager.c
+ * @brief Error handling of the application.
+ * @author Julian Ferreira
+ * @date 09/10/2026
  */
 
 #include "general_def.h"

@@ -1,8 +1,8 @@
-/*
- * OLED.c
- *
- *  Created on: 4 oct. 2026
- *      Author: Julian Ferreira
+/**
+ * @file OLED.c
+ * @brief SSD1306 128x64 OLED display driver (SPI).
+ * @author Julian Ferreira
+ * @date 04/10/2026
  */
 
 
@@ -14,23 +14,25 @@
 #include "OLED.h"
 #include "ErrorManager.h"
 
-#define OLED_WIDTH	128		// columnas
-#define OLED_PAGES	8		// 64 px de alto / 8 px por página
-#define OLED_BUFFER_SIZE	( OLED_WIDTH * OLED_PAGES )
-#define OLED_BLANK_BYTE	0x00
+#define OLED_WIDTH	128		/**< @brief Display width, in columns. */
+#define OLED_PAGES	8		/**< @brief Display height, in pages (64 px / 8 px per page). */
+#define OLED_BUFFER_SIZE	( OLED_WIDTH * OLED_PAGES )	/**< @brief Display memory size, in bytes. */
+#define OLED_BLANK_BYTE	0x00	/**< @brief Byte with all pixels off. */
 
-#define OLED_SPI_TIMEOUT_MS		1000
-#define OLED_POWER_ON_DELAY_MS	100		// Esperar a que se estabilice VCC al encender
-#define OLED_RESET_PRE_DELAY_MS	10
-#define OLED_RESET_PULSE_MS		20
-#define OLED_RESET_RECOVERY_MS	20
+#define OLED_SPI_TIMEOUT_MS		1000	/**< @brief Timeout of each SPI transfer, in ms. */
+#define OLED_POWER_ON_DELAY_MS	100		/**< @brief Wait for VCC to settle after power on, in ms. */
+#define OLED_RESET_PRE_DELAY_MS	10		/**< @brief Time RST is high before the reset pulse, in ms. */
+#define OLED_RESET_PULSE_MS		20		/**< @brief Duration of the reset pulse (RST low), in ms. */
+#define OLED_RESET_RECOVERY_MS	20		/**< @brief Wait after the reset pulse, in ms. */
 
-/* Comandos del SSD1306 */
+/** @name SSD1306 commands
+ *  @{
+ */
 #define SSD1306_CMD_DISPLAY_OFF			0xAE
 #define SSD1306_CMD_SET_CLOCK_DIV		0xD5
 #define SSD1306_CMD_SET_MULTIPLEX		0xA8
 #define SSD1306_CMD_SET_DISPLAY_OFFSET	0xD3
-#define SSD1306_CMD_SET_START_LINE		0x40	// línea de inicio 0
+#define SSD1306_CMD_SET_START_LINE		0x40	/**< Start line 0. */
 #define SSD1306_CMD_CHARGE_PUMP			0x8D
 #define SSD1306_CMD_MEMORY_MODE			0x20
 #define SSD1306_CMD_SEG_REMAP			0xA1
@@ -44,10 +46,13 @@
 #define SSD1306_CMD_DISPLAY_ON			0xAF
 #define SSD1306_CMD_SET_COLUMN_ADDR		0x21
 #define SSD1306_CMD_SET_PAGE_ADDR		0x22
+/** @} */
 
-/* Argumentos de los comandos */
+/** @name SSD1306 command arguments
+ *  @{
+ */
 #define SSD1306_CLOCK_DIV_DEFAULT		0x80
-#define SSD1306_MULTIPLEX_64			0x3F	// 64 filas - 1
+#define SSD1306_MULTIPLEX_64			0x3F	/**< 64 rows - 1. */
 #define SSD1306_DISPLAY_OFFSET_NONE		0x00
 #define SSD1306_CHARGE_PUMP_ENABLE		0x14
 #define SSD1306_MEMORY_MODE_HORIZONTAL	0x00
@@ -55,24 +60,30 @@
 #define SSD1306_CONTRAST_LEVEL			0xCF
 #define SSD1306_PRECHARGE_PERIOD		0xF1
 #define SSD1306_VCOMH_LEVEL				0x40
+/** @} */
 
-#define SPI_CRC_POLYNOMIAL_DEFAULT	7		// no se usa: CRC deshabilitado
+#define SPI_CRC_POLYNOMIAL_DEFAULT	7		/**< @brief SPI CRC polynomial (unused: CRC is disabled). */
 
-#define TIME_START_PAGE		2
-#define DECIMAL_BASE		10
+#define TIME_START_PAGE		2		/**< @brief First page where the time is drawn. */
+#define DECIMAL_BASE		10		/**< @brief Base used to split a number into tens and units. */
 
+/** @name Columns where each element of the time is drawn
+ *  @{
+ */
 static const uint8_t Hour_Dec = 8;
 static const uint8_t Hour_Unit = 24;
 static const uint8_t Colon = 40;
 static const uint8_t Min_Dec = 48;
 static const uint8_t Min_Unit = 64;
 static const uint8_t Alarm_Icon = 104;
+/** @} */
 
 static void OLED_SendInitSequence( void );
 
-static SPI_HandleTypeDef hspi1;
+static SPI_HandleTypeDef hspi1;	/**< @brief SPI handle used to talk to the display. */
 
 
+/* Documented in OLED.h */
 void OLED_Init( void )
 {
 	__HAL_RCC_GPIOA_CLK_ENABLE();
@@ -132,6 +143,12 @@ void OLED_Init( void )
 	OLED_SendInitSequence();
 }
 
+/**
+ * @brief Sends a command byte to the display (DC low).
+ *
+ * @param[in] cmd Command or command argument.
+ * @return true if the transfer succeeded, false otherwise.
+ */
 static bool_t OLED_Write_Command(uint8_t cmd) {
 	bool_t ret;
 
@@ -145,6 +162,13 @@ static bool_t OLED_Write_Command(uint8_t cmd) {
 	return ret;
 }
 
+/**
+ * @brief Sends data bytes to the display memory (DC high).
+ *
+ * @param[in] data Data to send.
+ * @param[in] size Number of bytes to send.
+ * @return true if the transfer succeeded, false otherwise.
+ */
 static bool_t OLED_Write_Data(uint8_t *data, uint16_t size) {
 	bool_t ret;
 
@@ -158,6 +182,11 @@ static bool_t OLED_Write_Data(uint8_t *data, uint16_t size) {
 	return ret;
 }
 
+/**
+ * @brief Resets the display and sends the SSD1306 initialization sequence.
+ *
+ * Calls Error_Handler() if any command fails.
+ */
 static void OLED_SendInitSequence( void )
 {
 	bool_t notError = true;
@@ -202,6 +231,7 @@ static void OLED_SendInitSequence( void )
 	}
 }
 
+/* Documented in OLED.h */
 void OLED_Clear( void ) {
 	OLED_Write_Command(SSD1306_CMD_SET_COLUMN_ADDR);
 	OLED_Write_Command(0);
@@ -217,6 +247,7 @@ void OLED_Clear( void ) {
 	}
 }
 
+/* Documented in OLED.h */
 void OLED_Draw( uint8_t start_col, uint8_t start_page, OLED_Bitmap_t bitmap )
 {
 	if ( bitmap.data == NULL) {
@@ -245,6 +276,16 @@ void OLED_Draw( uint8_t start_col, uint8_t start_page, OLED_Bitmap_t bitmap )
 	OLED_Write_Data((uint8_t*)bitmap.data, (uint16_t)bitmap.width * bitmap.pages);
 }
 
+/**
+ * @brief Clears a rectangular area of the display.
+ *
+ * Nothing is cleared if the area is empty or does not fit inside the display.
+ *
+ * @param[in] start_col  First column.
+ * @param[in] start_page First page.
+ * @param[in] width      Width in columns.
+ * @param[in] pages      Height in pages.
+ */
 static void OLED_ClearArea( uint8_t start_col, uint8_t start_page, uint8_t width, uint8_t pages )
 {
 	if ( width == 0 || pages == 0 ) {
@@ -271,6 +312,7 @@ static void OLED_ClearArea( uint8_t start_col, uint8_t start_page, uint8_t width
 	}
 }
 
+/* Documented in OLED.h */
 void OLED_DrawTime( Clock_time clock, bool_t alarmOn, BlinkField_t hidden )
 {
 	if (clock.Hours > MAX_HOUR) {

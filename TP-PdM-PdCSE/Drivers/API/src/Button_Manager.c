@@ -1,8 +1,8 @@
-/*
- * Button_Manager.c
- *
- *  Created on: 3 oct. 2026
- *      Author: Julian Ferreira
+/**
+ * @file Button_Manager.c
+ * @brief Button manager: debounce FSM and short / long press detection.
+ * @author Julian Ferreira
+ * @date 03/10/2026
  */
 
 #include "general_def.h"
@@ -22,17 +22,21 @@ typedef enum{
 	BUTTON_RISING,  /**< Rising edge detected, waiting for debounce confirmation. */
 } debounceState_t;
 
+/**
+ * @brief State and configuration of one button.
+ */
 typedef struct{
-	debounceState_t currentState;
-	tick_t pressStart;
-	uint32_t pin;
-	GPIO_TypeDef *port;
-	delay_t bounceDelay;
-	bool_t shortPressFlag;
-	bool_t longPressFlag;
-	bool_t longFired;
+	debounceState_t currentState;	/**< Current state of the debounce FSM. */
+	tick_t pressStart;				/**< Tick when the press was confirmed. */
+	uint32_t pin;					/**< GPIO pin of the button. */
+	GPIO_TypeDef *port;				/**< GPIO port of the button. */
+	delay_t bounceDelay;			/**< Debounce delay. */
+	bool_t shortPressFlag;			/**< Pending short press event. */
+	bool_t longPressFlag;			/**< Pending long press event. */
+	bool_t longFired;				/**< The long press was already reported for the current press. */
 }buttonDebounce;
 
+/** @brief Buttons, indexed by ButtonId_t. */
 static buttonDebounce buttons[] =
 {
 		{.currentState = BUTTON_UP, .pressStart = 0, .port = BUTTON_START_PORT, .pin = BUTTON_START_PIN},
@@ -45,6 +49,7 @@ static buttonDebounce buttons[] =
 #define DEBOUNCE_TIME_MS	40		/**< @brief Debounce time in milliseconds. */
 #define LONG_PRESS_TIME_MS	2000	/**< @brief Long press time in milliseconds. */
 
+/* Documented in Button_Manager.h */
 void Buttons_Init( void ){
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -83,11 +88,7 @@ void Buttons_Init( void ){
 	HAL_GPIO_Init( BUZZER_PORT, &GPIO_InitStruct );
 }
 
-/**
- * @brief Initializes the debounce FSM.
- *
- * Configures the debounce delay and sets the initial state to BUTTON_UP.
- */
+/* Documented in Button_Manager.h */
 void debounceFSM_init( void )
 {
 	for (uint8_t btnId = 0; btnId < BTN_COUNT; btnId++) {
@@ -100,9 +101,8 @@ void debounceFSM_init( void )
 }
 
 /**
- * @brief Updates the debounce FSM based on the current button state.
- *
- * Reads the GPIO pin of every button and transitions through the FSM states.
+ * Reads the GPIO pin of every button and transitions through the FSM states:
+ * BUTTON_UP -> BUTTON_FALLING -> BUTTON_DOWN -> BUTTON_RISING -> BUTTON_UP.
  * A long press flag is set once the button is held for LONG_PRESS_TIME_MS,
  * and a short press flag is set on release if no long press was detected.
  */
@@ -164,6 +164,11 @@ void debounceFSM_update( void )
 	}
 }
 
+/**
+ * @brief Latches a short press event.
+ *
+ * @param[in] btnId Button that was pressed.
+ */
 static void setShortPress( ButtonId_t btnId  )
 {
 	buttons[btnId].shortPressFlag = true;
@@ -183,6 +188,13 @@ bool_t shortPress( ButtonId_t btnId )
 	return buttons[btnId].shortPressFlag;
 }
 
+/**
+ * @brief Latches a long press event if the button was held long enough.
+ *
+ * The event is reported only once per press.
+ *
+ * @param[in] btnId Button that is pressed.
+ */
 static void setLongPress( ButtonId_t btnId  )
 {
 	buttonDebounce *b = &buttons[btnId];
@@ -192,7 +204,8 @@ static void setLongPress( ButtonId_t btnId  )
 	}
 }
 
-bool_t buttonIsHeld( ButtonId_t btnId )   // para el combo, no consume nada
+/* Documented in Button_Manager.h */
+bool_t buttonIsHeld( ButtonId_t btnId )
 {
 	if ( btnId >= BTN_COUNT ) {
 		return false;

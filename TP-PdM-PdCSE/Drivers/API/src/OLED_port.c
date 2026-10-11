@@ -1,8 +1,8 @@
-/*
- * OLED_port.c
- *
- *  Created on: 4 oct. 2026
- *      Author: Julian Ferreira
+/**
+ * @file OLED_port.c
+ * @brief Hardware abstraction layer of the OLED driver (SPI transfers).
+ * @author Julian Ferreira
+ * @date 04/10/2026
  */
 #include "general_def.h"
 #include "OLED_port.h"

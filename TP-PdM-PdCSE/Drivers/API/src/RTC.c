@@ -1,8 +1,8 @@
-/*
- * RTC.c
- *
- *  Created on: 6 oct. 2026
- *      Author: Julian Ferreira
+/**
+ * @file RTC.c
+ * @brief DS1307 real-time clock driver (I2C) and time helpers.
+ * @author Julian Ferreira
+ * @date 06/10/2026
  */
 
 #include "general_def.h"
@@ -11,39 +11,48 @@
 #include "RTC.h"
 #include "ErrorManager.h"
 
-#define DS1307_I2C_ADDR_7BIT	0x68
-#define DS1307_ADDR				( DS1307_I2C_ADDR_7BIT << 1 )	// la HAL espera la dirección desplazada
+#define DS1307_I2C_ADDR_7BIT	0x68	/**< @brief 7-bit I2C address of the DS1307. */
+#define DS1307_ADDR				( DS1307_I2C_ADDR_7BIT << 1 )	/**< @brief I2C address shifted, as the HAL expects it. */
 
-/* Registros del DS1307 */
-#define DS1307_REG_SECONDS		0x00
-#define DS1307_REG_MINUTES		0x01
-#define DS1307_REG_CONTROL		0x07
+/** @name DS1307 registers
+ *  @{
+ */
+#define DS1307_REG_SECONDS		0x00	/**< @brief Seconds and clock halt (CH) bit. */
+#define DS1307_REG_MINUTES		0x01	/**< @brief Minutes. */
+#define DS1307_REG_CONTROL		0x07	/**< @brief Square wave output control. */
+/** @} */
 
-/* Valores y máscaras */
-#define DS1307_SECONDS_RESET	0x00	// segundos = 0, CH = 0 (oscilador en marcha)
-#define DS1307_CTRL_SQW_1HZ		0x10	// SQWE = 1, RS = 00 -> 1 Hz
-#define DS1307_MINUTES_MASK		0x7F
-#define DS1307_HOURS_24H_MASK	0x3F
+/** @name DS1307 register values and masks
+ *  @{
+ */
+#define DS1307_SECONDS_RESET	0x00	/**< @brief Seconds = 0 and CH = 0 (oscillator running). */
+#define DS1307_CTRL_SQW_1HZ		0x10	/**< @brief SQWE = 1 and RS = 00: 1 Hz square wave. */
+#define DS1307_MINUTES_MASK		0x7F	/**< @brief Valid bits of the minutes register. */
+#define DS1307_HOURS_24H_MASK	0x3F	/**< @brief Valid bits of the hours register in 24-hour mode. */
+/** @} */
 
-#define DS1307_TIME_WRITE_LEN	3		// segundos, minutos, horas
-#define DS1307_TIME_READ_LEN	2		// minutos, horas
+#define DS1307_TIME_WRITE_LEN	3		/**< @brief Bytes written by RTC_SetTime(): seconds, minutes and hours. */
+#define DS1307_TIME_READ_LEN	2		/**< @brief Bytes read by RTC_ReadTime(): minutes and hours. */
 
-#define RTC_I2C_CLOCK_HZ		100000
-#define RTC_I2C_OWN_ADDRESS		0		// el micro es maestro, no usa dirección propia
-#define RTC_I2C_TIMEOUT_MS		1000
+#define RTC_I2C_CLOCK_HZ		100000	/**< @brief I2C clock frequency, in Hz. */
+#define RTC_I2C_OWN_ADDRESS		0		/**< @brief Own I2C address (unused: the microcontroller is the master). */
+#define RTC_I2C_TIMEOUT_MS		1000	/**< @brief Timeout of each I2C transfer, in ms. */
 
-#define BCD_NIBBLE_SHIFT		4
-#define BCD_LOW_NIBBLE_MASK		0x0F
-#define DECIMAL_BASE			10
+#define BCD_NIBBLE_SHIFT		4		/**< @brief Shift of the tens digit in a BCD byte. */
+#define BCD_LOW_NIBBLE_MASK		0x0F	/**< @brief Mask of the units digit in a BCD byte. */
+#define DECIMAL_BASE			10		/**< @brief Base used in the BCD conversions. */
 
-enum { TIME_IDX_SEC, TIME_IDX_MIN, TIME_IDX_HOUR };	// orden de los registros al escribir
-enum { READ_IDX_MIN, READ_IDX_HOUR };				// orden al leer desde DS1307_REG_MINUTES
+/** @brief Position of each register in the buffer written by RTC_SetTime(). */
+enum { TIME_IDX_SEC, TIME_IDX_MIN, TIME_IDX_HOUR };
+/** @brief Position of each register in the buffer read by RTC_ReadTime(), starting at DS1307_REG_MINUTES. */
+enum { READ_IDX_MIN, READ_IDX_HOUR };
 
 
 static void RTC_ConfigureDevice( void );
 
-static I2C_HandleTypeDef hi2c1;
+static I2C_HandleTypeDef hi2c1;	/**< @brief I2C handle used to talk to the DS1307. */
 
+/* Documented in RTC.h */
 void RTC_Init( void )
 {
 	__HAL_RCC_GPIOB_CLK_ENABLE();
@@ -87,6 +96,11 @@ void RTC_Init( void )
 	RTC_ConfigureDevice();
 }
 
+/**
+ * @brief Starts the DS1307 oscillator and enables the 1 Hz SQW output.
+ *
+ * @note Writing the seconds register also resets the seconds to 0.
+ */
 static void RTC_ConfigureDevice( void )
 {
 	uint8_t reg_sec = DS1307_SECONDS_RESET;
@@ -99,11 +113,23 @@ static void RTC_ConfigureDevice( void )
 	RTC_send_data(&hi2c1, DS1307_ADDR, DS1307_REG_CONTROL, I2C_MEMADD_SIZE_8BIT, &reg_ctrl, sizeof(reg_ctrl), RTC_I2C_TIMEOUT_MS);
 }
 
+/**
+ * @brief Converts a decimal value (0 to 99) to BCD.
+ *
+ * @param[in] val Decimal value.
+ * @return Value in BCD.
+ */
 static uint8_t decToBcd( uint8_t val )
 {
 	return ( ( val / DECIMAL_BASE ) << BCD_NIBBLE_SHIFT ) | ( val % DECIMAL_BASE );
 }
 
+/**
+ * @brief Converts a BCD value to decimal.
+ *
+ * @param[in] val Value in BCD.
+ * @return Decimal value.
+ */
 static uint8_t bcdToDec( uint8_t val )
 {
 	return ( ( val >> BCD_NIBBLE_SHIFT ) * DECIMAL_BASE ) + ( val & BCD_LOW_NIBBLE_MASK );

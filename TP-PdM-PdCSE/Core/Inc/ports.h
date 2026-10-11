@@ -1,8 +1,8 @@
-/*
- * ports.h
- *
- *  Created on: 3 oct. 2026
- *      Author: Julian Ferreira
+/**
+ * @file ports.h
+ * @brief Pin assignment of the board: buttons, OLED display, RTC and buzzer.
+ * @author Julian Ferreira
+ * @date 03/10/2026
  */
 
 #ifndef INC_PORTS_H_
@@ -10,9 +10,12 @@
 
 #include "stm32f4xx_hal.h"
 
-//GPIO
+/** @name Buttons
+ *  Inputs with external pull-down resistors.
+ *  @{
+ */
 
-#define BUTTON_PRESSED_LEVEL	GPIO_PIN_SET	// pull-down externo: apretado = 1
+#define BUTTON_PRESSED_LEVEL	GPIO_PIN_SET	/**< @brief Pin level of a pressed button (external pull-down). */
 
 #define BUTTON_START_PORT	GPIOB
 #define BUTTON_START_PIN	GPIO_PIN_13
@@ -39,8 +42,12 @@
 #define BUTTON_RIGHT_MODE	GPIO_MODE_INPUT
 #define BUTTON_RIGHT_PULL	GPIO_NOPULL
 
+/** @} */
 
-//OLED
+/** @name OLED display
+ *  SSD1306 controlled through SPI1.
+ *  @{
+ */
 
 #define SPI_OLED_CLK_PORT	GPIOA
 #define SPI_OLED_CLK_PIN		GPIO_PIN_5
@@ -72,7 +79,12 @@
 #define SPI_OLED_CS_PULL 	GPIO_NOPULL
 #define SPI_OLED_CS_SPEED	GPIO_SPEED_FREQ_VERY_HIGH
 
-//Tiny RTC
+/** @} */
+
+/** @name Tiny RTC
+ *  DS1307 controlled through I2C1, plus its 1 Hz square wave output (SQW).
+ *  @{
+ */
 
 #define I2C_RTC_SDA_PORT	GPIOB
 #define I2C_RTC_SDA_PIN		GPIO_PIN_9
@@ -94,11 +106,17 @@
 #define RTC_SQW_PULL	GPIO_PULLUP
 #define RTC_SQW_SPEED	GPIO_SPEED_FREQ_VERY_HIGH
 
-//BUZZER:
+/** @} */
+
+/** @name Buzzer
+ *  @{
+ */
 #define BUZZER_PORT			GPIOA
 #define BUZZER_PIN			GPIO_PIN_10
 #define BUZZER_MODE			GPIO_MODE_OUTPUT_PP
 #define BUZZER_PULL			GPIO_NOPULL
-#define BUZZER_OFF_LEVEL	GPIO_PIN_RESET
+#define BUZZER_OFF_LEVEL	GPIO_PIN_RESET	/**< @brief Pin level that turns the buzzer off. */
+
+/** @} */
 
 #endif /* INC_PORTS_H_ */

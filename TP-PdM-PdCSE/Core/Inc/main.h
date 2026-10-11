@@ -1,8 +1,12 @@
-/*
- * main.h
+/**
+ * @file main.h
+ * @brief Header of the application entry point.
  *
- *  Created on: 3 oct. 2026
- *      Author: Julian Ferreira
+ * Currently it does not declare anything: the modules used by main.c are
+ * included directly from their own headers.
+ *
+ * @author Julian Ferreira
+ * @date 03/10/2026
  */
 
 #ifndef INC_MAIN_H_

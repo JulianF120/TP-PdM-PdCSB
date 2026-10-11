@@ -1,8 +1,8 @@
-/*
- * RTC_port.c
- *
- *  Created on: 6 oct. 2026
- *      Author: Julian Ferreira
+/**
+ * @file RTC_port.c
+ * @brief Hardware abstraction layer of the RTC driver (I2C transfers).
+ * @author Julian Ferreira
+ * @date 06/10/2026
  */
 
 

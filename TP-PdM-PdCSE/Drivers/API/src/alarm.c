@@ -1,8 +1,8 @@
-/*
- * alarm.c
- *
- *  Created on: 5 oct. 2026
- *      Author: Julian Ferreira
+/**
+ * @file alarm.c
+ * @brief Alarm clock FSM.
+ * @author Julian Ferreira
+ * @date 05/10/2026
  */
 
 
@@ -12,8 +12,8 @@
 #include "ports.h"
 #include "OLED.h"
 
-#define BLINK_PERIOD_MS 500
-#define ALARM_RING_PERIOD_MS 200
+#define BLINK_PERIOD_MS 500			/**< @brief Blink period of the field being set, in ms. */
+#define ALARM_RING_PERIOD_MS 200	/**< @brief On / off period of the buzzer while ringing, in ms. */
 
 static void idleState( void );
 static void confClockH_State( void );
@@ -24,32 +24,36 @@ static void updateState( void );
 static void alarmRingState( void );
 static void BuzzerManager( void );
 
+/**
+ * @brief States of the alarm FSM.
+ */
 typedef enum{
-	IDLE,
-	CONF_CLK_H,
-	CONF_CLK_M,
-	CONF_ALARM_H,
-	CONF_ALARM_M,
-	UPDATE,
-	ALARM_RING
+	IDLE,			/**< Shows the time and waits for buttons, the alarm or the next second. */
+	CONF_CLK_H,		/**< Setting the clock hours. */
+	CONF_CLK_M,		/**< Setting the clock minutes. */
+	CONF_ALARM_H,	/**< Setting the alarm hours. */
+	CONF_ALARM_M,	/**< Setting the alarm minutes. */
+	UPDATE,			/**< Reads the time from the RTC and redraws it. */
+	ALARM_RING		/**< The alarm is ringing. */
 }alarmStates;
 
 static void changeState( alarmStates next );
 static void blinkRestart( void );
 static void drawConf( Clock_time t, BlinkField_t field );
 
-static alarmStates currentState;
-static bool_t alarmEnabled;
-static Clock_time clock;
-static Clock_time alarm;
-static GPIO_PinState sqwPrev;
-static bool_t ringOff;
-static delay_t blinkDelay;
-static bool_t blinkVisible;
-static bool_t redraw;
-static bool_t comboHandled;
-static delay_t ringDelay;
+static alarmStates currentState;	/**< @brief Current state of the FSM. */
+static bool_t alarmEnabled;			/**< @brief The alarm is enabled. */
+static Clock_time clock;			/**< @brief Current time (or the time being set). */
+static Clock_time alarm;			/**< @brief Alarm time. */
+static GPIO_PinState sqwPrev;		/**< @brief Previous level of the SQW pin, to detect its rising edge. */
+static bool_t ringOff;				/**< @brief The alarm was turned off during the current alarm minute. */
+static delay_t blinkDelay;			/**< @brief Blink timer of the field being set. */
+static bool_t blinkVisible;			/**< @brief The field being set is currently visible. */
+static bool_t redraw;				/**< @brief The display must be redrawn. */
+static bool_t comboHandled;			/**< @brief The LEFT + RIGHT combo was already handled for the current press. */
+static delay_t ringDelay;			/**< @brief Buzzer on / off timer. */
 
+/* Documented in alarm.h */
 void alarmFSM_init( void )
 {
 	alarmEnabled = false;
@@ -66,6 +70,7 @@ void alarmFSM_init( void )
 	updateState();
 }
 
+/* Documented in alarm.h */
 void alarmFSM_update( void )
 {
 	switch(currentState){
@@ -96,6 +101,13 @@ void alarmFSM_update( void )
 	}
 }
 
+/**
+ * @brief IDLE state.
+ *
+ * Handles, in order of priority: entering the clock or alarm setup, toggling
+ * the alarm, starting the alarm, and reading the time on each rising edge of
+ * the RTC SQW signal (once per second).
+ */
 static void idleState( void )
 {
 	GPIO_PinState sqwCurr = HAL_GPIO_ReadPin( RTC_SQW_PORT, RTC_SQW_PIN );
@@ -127,6 +139,11 @@ static void idleState( void )
 	sqwPrev = sqwCurr;
 }
 
+/**
+ * @brief CONF_CLK_H state: sets the clock hours.
+ *
+ * START writes the time to the RTC and returns to IDLE.
+ */
 static void confClockH_State( void )
 {
 	drawConf( clock, BLINK_HOURS );
@@ -148,6 +165,11 @@ static void confClockH_State( void )
 	}
 }
 
+/**
+ * @brief CONF_CLK_M state: sets the clock minutes.
+ *
+ * START writes the time to the RTC and returns to IDLE.
+ */
 static void confClockM_State( void )
 {
 	drawConf( clock, BLINK_MINUTES );
@@ -169,6 +191,11 @@ static void confClockM_State( void )
 	}
 }
 
+/**
+ * @brief CONF_ALARM_H state: sets the alarm hours.
+ *
+ * START returns to IDLE.
+ */
 static void confAlarmH_State( void )
 {
 	drawConf( alarm, BLINK_HOURS );
@@ -189,6 +216,11 @@ static void confAlarmH_State( void )
 	}
 }
 
+/**
+ * @brief CONF_ALARM_M state: sets the alarm minutes.
+ *
+ * START returns to IDLE.
+ */
 static void confAlarmM_State( void )
 {
 	drawConf( alarm, BLINK_MINUTES );
@@ -209,6 +241,9 @@ static void confAlarmM_State( void )
 	}
 }
 
+/**
+ * @brief UPDATE state: reads the time from the RTC, redraws it and returns to IDLE.
+ */
 static void updateState( void )
 {
 	RTC_ReadTime( &clock );
@@ -216,6 +251,9 @@ static void updateState( void )
 	currentState = IDLE;
 }
 
+/**
+ * @brief ALARM_RING state: rings the buzzer until START is pressed.
+ */
 static void alarmRingState( void )
 {
 	if ( shortPress( BTN_START ) ) {
@@ -226,6 +264,14 @@ static void alarmRingState( void )
 	BuzzerManager();
 }
 
+/**
+ * @brief Changes the FSM state.
+ *
+ * Discards the pending button events and restarts the blink, so the new
+ * state starts from a known condition.
+ *
+ * @param[in] next New state.
+ */
 static void changeState( alarmStates next )
 {
 	clearKeys();
@@ -233,13 +279,27 @@ static void changeState( alarmStates next )
 	currentState = next;
 }
 
-static void blinkRestart( void )   // al entrar a un CONF_* o al cambiar el valor
+/**
+ * @brief Restarts the blink with the field visible and requests a redraw.
+ *
+ * Called when entering a setup state and when the value changes, so the new
+ * value is visible right away.
+ */
+static void blinkRestart( void )
 {
 	blinkVisible = true;
 	delayInit( &blinkDelay, BLINK_PERIOD_MS );   // reinicia la cuenta
 	redraw = true;
 }
 
+/**
+ * @brief Draws a time while it is being set, making one field blink.
+ *
+ * The display is only redrawn when the blink toggles or the value changes.
+ *
+ * @param[in] t     Time to draw.
+ * @param[in] field Field that blinks.
+ */
 static void drawConf( Clock_time t, BlinkField_t field )
 {
 	if ( delayRead( &blinkDelay ) ) {
@@ -252,6 +312,9 @@ static void drawConf( Clock_time t, BlinkField_t field )
 	}
 }
 
+/**
+ * @brief Toggles the buzzer every ALARM_RING_PERIOD_MS.
+ */
 static void BuzzerManager( void )
 {
 	if ( delayRead( &ringDelay ) ) {
