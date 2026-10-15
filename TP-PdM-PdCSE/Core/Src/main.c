@@ -50,6 +50,7 @@ int main(void)
     Buttons_Init();
     RTC_Init();
     OLED_Init();
+    OLED_Clear();
     debounceFSM_init();
     alarmFSM_init();
     while (1)
